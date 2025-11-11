@@ -1,0 +1,427 @@
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+import os
+import subprocess
+import uuid
+from datetime import datetime
+import asyncpg
+from minio import Minio
+from minio.error import S3Error
+import asyncio
+import json
+from contextlib import asynccontextmanager
+
+# Configuration from environment variables
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://filmreview:filmreview@postgres:5432/filmreview")
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_SECURE = os.getenv("MINIO_SECURE", "false").lower() == "true"
+BUCKET_NAME = "basketball-clips"
+
+# Global database pool
+db_pool = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global db_pool
+    db_pool = await asyncpg.create_pool(DATABASE_URL)
+    
+    # Initialize MinIO client
+    minio_client = Minio(
+        MINIO_ENDPOINT,
+        access_key=MINIO_ACCESS_KEY,
+        secret_key=MINIO_SECRET_KEY,
+        secure=MINIO_SECURE
+    )
+    
+    # Create bucket if it doesn't exist
+    try:
+        if not minio_client.bucket_exists(BUCKET_NAME):
+            minio_client.make_bucket(BUCKET_NAME)
+    except S3Error as e:
+        print(f"Error creating bucket: {e}")
+    
+    # Initialize database schema
+    async with db_pool.acquire() as conn:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS games (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name VARCHAR(255) NOT NULL,
+                date DATE NOT NULL,
+                video_path VARCHAR(500) NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clips (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                start_time VARCHAR(20) NOT NULL,
+                end_time VARCHAR(20) NOT NULL,
+                tags TEXT[] NOT NULL,
+                notes TEXT,
+                clip_path VARCHAR(500),
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+    
+    yield
+    
+    # Shutdown
+    await db_pool.close()
+
+app = FastAPI(title="Basketball Film Review", lifespan=lifespan)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic models
+class GameCreate(BaseModel):
+    name: str
+    date: str
+
+class ClipCreate(BaseModel):
+    game_id: str
+    start_time: str
+    end_time: str
+    tags: List[str]
+    notes: Optional[str] = None
+
+class Game(BaseModel):
+    id: str
+    name: str
+    date: str
+    video_path: str
+    created_at: datetime
+
+class Clip(BaseModel):
+    id: str
+    game_id: str
+    start_time: str
+    end_time: str
+    tags: List[str]
+    notes: Optional[str]
+    clip_path: Optional[str]
+    status: str
+    created_at: datetime
+
+# Helper functions
+def get_minio_client():
+    return Minio(
+        MINIO_ENDPOINT,
+        access_key=MINIO_ACCESS_KEY,
+        secret_key=MINIO_SECRET_KEY,
+        secure=MINIO_SECURE
+    )
+
+def time_to_seconds(time_str: str) -> str:
+    """Convert mm:ss or hh:mm:ss to ffmpeg format"""
+    parts = time_str.split(':')
+    if len(parts) == 2:
+        return f"00:{parts[0].zfill(2)}:{parts[1].zfill(2)}"
+    elif len(parts) == 3:
+        return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}:{parts[2].zfill(2)}"
+    return time_str
+
+async def process_clip(clip_id: str, game_video_path: str, start_time: str, end_time: str):
+    """Background task to extract video clip using ffmpeg"""
+    try:
+        # Update status to processing
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE clips SET status = 'processing' WHERE id = $1",
+                uuid.UUID(clip_id)
+            )
+        
+        # Download video from MinIO
+        minio_client = get_minio_client()
+        local_video_path = f"/tmp/{uuid.uuid4()}.mp4"
+        minio_client.fget_object(BUCKET_NAME, game_video_path, local_video_path)
+        
+        # Convert time format
+        start = time_to_seconds(start_time)
+        end = time_to_seconds(end_time)
+        
+        # Extract clip
+        output_path = f"/tmp/clip_{clip_id}.mp4"
+        cmd = [
+            "ffmpeg",
+            "-i", local_video_path,
+            "-ss", start,
+            "-to", end,
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-y",
+            output_path
+        ]
+        
+        subprocess.run(cmd, check=True, capture_output=True)
+        
+        # Upload clip to MinIO
+        clip_minio_path = f"clips/{clip_id}.mp4"
+        minio_client.fput_object(BUCKET_NAME, clip_minio_path, output_path)
+        
+        # Update database
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE clips SET status = 'completed', clip_path = $1 WHERE id = $2",
+                clip_minio_path,
+                uuid.UUID(clip_id)
+            )
+        
+        # Cleanup
+        os.remove(local_video_path)
+        os.remove(output_path)
+        
+    except Exception as e:
+        print(f"Error processing clip {clip_id}: {e}")
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE clips SET status = 'failed' WHERE id = $1",
+                uuid.UUID(clip_id)
+            )
+
+# API Endpoints
+@app.get("/")
+async def root():
+    return {"message": "Basketball Film Review API", "version": "1.0.0"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+@app.post("/games", response_model=Game)
+async def create_game(
+    name: str = Form(...),
+    date: str = Form(...),
+    video: UploadFile = File(...)
+):
+    """Upload a game video"""
+    game_id = str(uuid.uuid4())
+    video_path = f"games/{game_id}/{video.filename}"
+    
+    # Upload to MinIO
+    minio_client = get_minio_client()
+    temp_file = f"/tmp/{uuid.uuid4()}_{video.filename}"
+    
+    with open(temp_file, "wb") as f:
+        content = await video.read()
+        f.write(content)
+    
+    try:
+        minio_client.fput_object(BUCKET_NAME, video_path, temp_file)
+    finally:
+        os.remove(temp_file)
+    
+    # Save to database
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO games (id, name, date, video_path)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, name, date, video_path, created_at
+            """,
+            uuid.UUID(game_id), name, date, video_path
+        )
+    
+    return {
+        "id": str(row["id"]),
+        "name": row["name"],
+        "date": row["date"],
+        "video_path": row["video_path"],
+        "created_at": row["created_at"]
+    }
+
+@app.get("/games", response_model=List[Game])
+async def list_games():
+    """List all games"""
+    async with db_pool.acquire() as conn:
+        rows = await conn.fetch("SELECT * FROM games ORDER BY date DESC")
+    
+    return [
+        {
+            "id": str(row["id"]),
+            "name": row["name"],
+            "date": row["date"],
+            "video_path": row["video_path"],
+            "created_at": row["created_at"]
+        }
+        for row in rows
+    ]
+
+@app.get("/games/{game_id}", response_model=Game)
+async def get_game(game_id: str):
+    """Get a specific game"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM games WHERE id = $1",
+            uuid.UUID(game_id)
+        )
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    return {
+        "id": str(row["id"]),
+        "name": row["name"],
+        "date": row["date"],
+        "video_path": row["video_path"],
+        "created_at": row["created_at"]
+    }
+
+@app.post("/clips", response_model=Clip)
+async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
+    """Create a new clip from a game"""
+    # Verify game exists
+    async with db_pool.acquire() as conn:
+        game = await conn.fetchrow(
+            "SELECT video_path FROM games WHERE id = $1",
+            uuid.UUID(clip.game_id)
+        )
+    
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    
+    # Create clip record
+    clip_id = str(uuid.uuid4())
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO clips (id, game_id, start_time, end_time, tags, notes)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, game_id, start_time, end_time, tags, notes, clip_path, status, created_at
+            """,
+            uuid.UUID(clip_id),
+            uuid.UUID(clip.game_id),
+            clip.start_time,
+            clip.end_time,
+            clip.tags,
+            clip.notes
+        )
+    
+    # Queue clip processing
+    background_tasks.add_task(
+        process_clip,
+        clip_id,
+        game["video_path"],
+        clip.start_time,
+        clip.end_time
+    )
+    
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+        "tags": row["tags"],
+        "notes": row["notes"],
+        "clip_path": row["clip_path"],
+        "status": row["status"],
+        "created_at": row["created_at"]
+    }
+
+@app.get("/clips", response_model=List[Clip])
+async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
+    """List clips with optional filters"""
+    query = "SELECT * FROM clips WHERE 1=1"
+    params = []
+    
+    if game_id:
+        params.append(uuid.UUID(game_id))
+        query += f" AND game_id = ${len(params)}"
+    
+    if tag:
+        params.append([tag])
+        query += f" AND tags && ${len(params)}"
+    
+    query += " ORDER BY created_at DESC"
+    
+    async with db_pool.acquire() as conn:
+        rows = await conn.fetch(query, *params)
+    
+    return [
+        {
+            "id": str(row["id"]),
+            "game_id": str(row["game_id"]),
+            "start_time": row["start_time"],
+            "end_time": row["end_time"],
+            "tags": row["tags"],
+            "notes": row["notes"],
+            "clip_path": row["clip_path"],
+            "status": row["status"],
+            "created_at": row["created_at"]
+        }
+        for row in rows
+    ]
+
+@app.get("/clips/{clip_id}/download")
+async def download_clip(clip_id: str):
+    """Download a processed clip"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT clip_path, status FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Clip not found")
+    
+    if row["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Clip is not ready. Status: {row['status']}")
+    
+    # Download from MinIO and stream
+    minio_client = get_minio_client()
+    try:
+        response = minio_client.get_object(BUCKET_NAME, row["clip_path"])
+        return StreamingResponse(
+            response.stream(),
+            media_type="video/mp4",
+            headers={"Content-Disposition": f"attachment; filename=clip_{clip_id}.mp4"}
+        )
+    except S3Error as e:
+        raise HTTPException(status_code=404, detail="Clip file not found")
+
+@app.delete("/clips/{clip_id}")
+async def delete_clip(clip_id: str):
+    """Delete a clip"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT clip_path FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+        
+        if not row:
+            raise HTTPException(status_code=404, detail="Clip not found")
+        
+        # Delete from MinIO if exists
+        if row["clip_path"]:
+            minio_client = get_minio_client()
+            try:
+                minio_client.remove_object(BUCKET_NAME, row["clip_path"])
+            except S3Error:
+                pass
+        
+        # Delete from database
+        await conn.execute(
+            "DELETE FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+    
+    return {"message": "Clip deleted successfully"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

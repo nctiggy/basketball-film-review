@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Film Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .game-list, .clip-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .game-item, .clip-item {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .game-item:hover, .clip-item:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .game-date {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-processing {
+            background: #e67e22;
+            color: white;
+        }
+
+        .status-completed {
+            background: #27ae60;
+            color: white;
+        }
+
+        .status-failed {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .clip-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .clip-actions button {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #efe;
+            color: #060;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .clip-times {
+            font-family: monospace;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        #tagInput {
+            display: inline-block;
+            width: auto;
+            min-width: 200px;
+            margin-right: 10px;
+        }
+
+        #addTagBtn {
+            display: inline-block;
+            padding: 10px 20px;
+        }
+
+        .tag-list {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag-item {
+            background: #ecf0f1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🏀 Basketball Film Review</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Upload Game Section -->
+        <div class="section">
+            <h2>Upload Game Video</h2>
+            <div id="uploadMessage"></div>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="gameName">Game Name:</label>
+                    <input type="text" id="gameName" required placeholder="e.g., vs Warriors - Home Game">
+                </div>
+                <div class="form-group">
+                    <label for="gameDate">Game Date:</label>
+                    <input type="date" id="gameDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="gameVideo">Video File:</label>
+                    <input type="file" id="gameVideo" accept="video/*" required>
+                </div>
+                <button type="submit">Upload Game</button>
+            </form>
+        </div>
+
+        <!-- Create Clip Section -->
+        <div class="section">
+            <h2>Create Clip</h2>
+            <div id="clipMessage"></div>
+            <form id="clipForm">
+                <div class="form-group">
+                    <label for="selectGame">Select Game:</label>
+                    <select id="selectGame" required>
+                        <option value="">-- Select a game --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="startTime">Start Time (mm:ss or hh:mm:ss):</label>
+                    <input type="text" id="startTime" required placeholder="e.g., 05:30">
+                </div>
+                <div class="form-group">
+                    <label for="endTime">End Time (mm:ss or hh:mm:ss):</label>
+                    <input type="text" id="endTime" required placeholder="e.g., 05:45">
+                </div>
+                <div class="form-group">
+                    <label>Tags:</label>
+                    <div>
+                        <input type="text" id="tagInput" placeholder="Add a tag (e.g., defense, player name)">
+                        <button type="button" id="addTagBtn">Add Tag</button>
+                    </div>
+                    <div id="tagList" class="tag-list"></div>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes (optional):</label>
+                    <textarea id="notes" placeholder="Add any notes about this play..."></textarea>
+                </div>
+                <button type="submit">Create Clip</button>
+            </form>
+        </div>
+
+        <!-- Games List -->
+        <div class="section">
+            <h2>Games</h2>
+            <div id="gamesList" class="game-list">
+                <div class="loading">Loading games...</div>
+            </div>
+        </div>
+
+        <!-- Clips List -->
+        <div class="section">
+            <h2>Clips</h2>
+            <div class="form-group">
+                <label for="filterGame">Filter by Game:</label>
+                <select id="filterGame">
+                    <option value="">All Games</option>
+                </select>
+            </div>
+            <div id="clipsList" class="clip-list">
+                <div class="loading">Loading clips...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let selectedTags = [];
+
+        // Load games on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGames();
+            loadClips();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Upload form
+            document.getElementById('uploadForm').addEventListener('submit', handleUploadGame);
+            
+            // Clip form
+            document.getElementById('clipForm').addEventListener('submit', handleCreateClip);
+            
+            // Tag management
+            document.getElementById('addTagBtn').addEventListener('click', addTag);
+            document.getElementById('tagInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                }
+            });
+
+            // Filter clips by game
+            document.getElementById('filterGame').addEventListener('change', (e) => {
+                loadClips(e.target.value);
+            });
+        }
+
+        function addTag() {
+            const input = document.getElementById('tagInput');
+            const tag = input.value.trim();
+            
+            if (tag && !selectedTags.includes(tag)) {
+                selectedTags.push(tag);
+                renderTags();
+                input.value = '';
+            }
+        }
+
+        function removeTag(tag) {
+            selectedTags = selectedTags.filter(t => t !== tag);
+            renderTags();
+        }
+
+        function renderTags() {
+            const tagList = document.getElementById('tagList');
+            tagList.innerHTML = selectedTags.map(tag => `
+                <div class="tag-item">
+                    <span>${tag}</span>
+                    <span class="tag-remove" onclick="removeTag('${tag}')">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        async function handleUploadGame(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const messageDiv = document.getElementById('uploadMessage');
+            
+            submitBtn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Uploading video... This may take a while.</div>';
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('gameName').value);
+            formData.append('date', document.getElementById('gameDate').value);
+            formData.append('video', document.getElementById('gameVideo').files[0]);
+            
+            try {
+                const response = await fetch(`${API_BASE}/games`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                messageDiv.innerHTML = '<div class="success">Game uploaded successfully!</div>';
+                form.reset();
+                loadGames();
+                
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handleCreateClip(e) {
+            e.preventDefault();
+            
+            if (selectedTags.length === 0) {
+                alert('Please add at least one tag');
+                return;
+            }
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const messageDiv = document.getElementById('clipMessage');
+            
+            submitBtn.disabled = true;
+            
+            const data = {
+                game_id: document.getElementById('selectGame').value,
+                start_time: document.getElementById('startTime').value,
+                end_time: document.getElementById('endTime').value,
+                tags: selectedTags,
+                notes: document.getElementById('notes').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/clips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error('Failed to create clip');
+                
+                messageDiv.innerHTML = '<div class="success">Clip created! Processing will start in the background.</div>';
+                form.reset();
+                selectedTags = [];
+                renderTags();
+                loadClips();
+                
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_BASE}/games`);
+                const games = await response.json();
+                
+                // Update games list
+                const gamesListDiv = document.getElementById('gamesList');
+                if (games.length === 0) {
+                    gamesListDiv.innerHTML = '<p>No games uploaded yet.</p>';
+                } else {
+                    gamesListDiv.innerHTML = games.map(game => `
+                        <div class="game-item">
+                            <div class="game-header">
+                                <div>
+                                    <div class="game-title">${game.name}</div>
+                                    <div class="game-date">${new Date(game.date).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Update game selectors
+                const options = games.map(game => 
+                    `<option value="${game.id}">${game.name} - ${new Date(game.date).toLocaleDateString()}</option>`
+                ).join('');
+                
+                document.getElementById('selectGame').innerHTML = 
+                    '<option value="">-- Select a game --</option>' + options;
+                
+                document.getElementById('filterGame').innerHTML = 
+                    '<option value="">All Games</option>' + options;
+                
+            } catch (error) {
+                console.error('Error loading games:', error);
+                document.getElementById('gamesList').innerHTML = 
+                    '<div class="error">Failed to load games</div>';
+            }
+        }
+
+        async function loadClips(gameId = '') {
+            try {
+                const url = gameId ? `${API_BASE}/clips?game_id=${gameId}` : `${API_BASE}/clips`;
+                const response = await fetch(url);
+                const clips = await response.json();
+                
+                const clipsListDiv = document.getElementById('clipsList');
+                if (clips.length === 0) {
+                    clipsListDiv.innerHTML = '<p>No clips created yet.</p>';
+                    return;
+                }
+                
+                clipsListDiv.innerHTML = clips.map(clip => `
+                    <div class="clip-item">
+                        <div class="clip-times">
+                            <strong>${clip.start_time} → ${clip.end_time}</strong>
+                        </div>
+                        <div class="tags">
+                            ${clip.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                        ${clip.notes ? `<p style="margin-top: 10px; color: #666;">${clip.notes}</p>` : ''}
+                        <div style="margin-top: 10px;">
+                            <span class="status status-${clip.status}">${clip.status.toUpperCase()}</span>
+                        </div>
+                        <div class="clip-actions">
+                            ${clip.status === 'completed' ? 
+                                `<button onclick="downloadClip('${clip.id}')">Download Clip</button>` : 
+                                ''}
+                            <button class="btn-danger" onclick="deleteClip('${clip.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading clips:', error);
+                document.getElementById('clipsList').innerHTML = 
+                    '<div class="error">Failed to load clips</div>';
+            }
+        }
+
+        async function downloadClip(clipId) {
+            window.location.href = `${API_BASE}/clips/${clipId}/download`;
+        }
+
+        async function deleteClip(clipId) {
+            if (!confirm('Are you sure you want to delete this clip?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/clips/${clipId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Delete failed');
+                
+                loadClips();
+            } catch (error) {
+                alert(`Error deleting clip: ${error.message}`);
+            }
+        }
+
+        // Auto-refresh clips every 10 seconds to update status
+        setInterval(() => {
+            const filterGame = document.getElementById('filterGame').value;
+            loadClips(filterGame);
+        }, 10000);
+    </script>
+</body>
+</html>

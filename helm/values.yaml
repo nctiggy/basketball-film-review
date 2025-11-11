@@ -1,0 +1,169 @@
+# Default values for basketball-film-review
+
+# Backend configuration
+backend:
+  replicaCount: 1
+  
+  image:
+    repository: basketball-film-review-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  env:
+    - name: DATABASE_URL
+      value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)"
+    - name: MINIO_ENDPOINT
+      value: "$(MINIO_HOST):9000"
+    - name: MINIO_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: minio-secret
+          key: rootUser
+    - name: MINIO_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: minio-secret
+          key: rootPassword
+    - name: MINIO_SECURE
+      value: "false"
+    - name: POSTGRES_USER
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: username
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: password
+    - name: POSTGRES_DB
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: database
+    - name: POSTGRES_HOST
+      value: "basketball-film-review-postgresql"
+    - name: MINIO_HOST
+      value: "basketball-film-review-minio"
+
+# Frontend configuration
+frontend:
+  replicaCount: 1
+  
+  image:
+    repository: basketball-film-review-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: LoadBalancer
+    port: 80
+    # For NodePort, uncomment and set:
+    # type: NodePort
+    # nodePort: 30080
+  
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Application configuration
+app:
+  name: basketball-film-review
+
+# PostgreSQL configuration (Bitnami chart)
+postgresql:
+  enabled: true
+  auth:
+    username: filmreview
+    password: filmreview
+    database: filmreview
+    existingSecret: ""
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# MinIO configuration (MinIO chart)
+minio:
+  enabled: true
+  mode: standalone
+  
+  rootUser: minioadmin
+  rootPassword: minioadmin
+  
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  
+  service:
+    type: ClusterIP
+    port: 9000
+  
+  consoleService:
+    enabled: true
+    type: ClusterIP
+    port: 9001
+
+# Ingress configuration (optional)
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: film-review.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: film-review-tls
+    #   hosts:
+    #     - film-review.example.com
+
+# Storage class for persistent volumes
+# Leave empty to use default storage class
+storageClass: ""
+
+# Secrets
+secrets:
+  postgres:
+    username: filmreview
+    password: filmreview
+    database: filmreview
+  
+  minio:
+    rootUser: minioadmin
+    rootPassword: minioadmin

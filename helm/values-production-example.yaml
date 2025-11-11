@@ -1,0 +1,107 @@
+# Example production values for Basketball Film Review
+# Copy this file to values-custom.yaml and adjust for your environment
+
+# Image configuration - UPDATE THESE!
+backend:
+  image:
+    repository: your-registry/basketball-film-review-backend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  
+  # Adjust resources based on video size and processing needs
+  resources:
+    limits:
+      cpu: 2000m      # 2 cores for video processing
+      memory: 4Gi     # More memory for large videos
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+frontend:
+  image:
+    repository: your-registry/basketball-film-review-frontend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: LoadBalancer
+    # For NodePort, use:
+    # type: NodePort
+    # nodePort: 30080
+
+# Production secrets - CHANGE THESE!
+secrets:
+  postgres:
+    username: filmreview
+    password: "YOUR-SECURE-POSTGRES-PASSWORD-HERE"
+    database: filmreview
+  
+  minio:
+    rootUser: "admin"
+    rootPassword: "YOUR-SECURE-MINIO-PASSWORD-HERE"
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: filmreview
+    password: "YOUR-SECURE-POSTGRES-PASSWORD-HERE"
+    database: filmreview
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi                    # Adjust based on needs
+      storageClass: "fast-ssd"      # Your storage class
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# MinIO configuration
+minio:
+  enabled: true
+  mode: standalone
+  
+  rootUser: "admin"
+  rootPassword: "YOUR-SECURE-MINIO-PASSWORD-HERE"
+  
+  persistence:
+    enabled: true
+    size: 100Gi                     # Adjust based on video storage needs
+    storageClass: "standard"        # Your storage class
+  
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+# Ingress (optional)
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "2000m"  # Allow large video uploads
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  hosts:
+    - host: film-review.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: film-review-tls
+      hosts:
+        - film-review.example.com
+
+# Storage class for PVCs
+# Leave empty to use cluster default
+storageClass: ""
