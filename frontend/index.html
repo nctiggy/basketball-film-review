@@ -393,11 +393,11 @@
     </header>
 
     <div class="container">
-        <!-- Upload Game Section -->
+        <!-- Create Game Section -->
         <div class="section">
-            <h2>Upload Game Video</h2>
-            <div id="uploadMessage"></div>
-            <form id="uploadForm">
+            <h2>Create New Game</h2>
+            <div id="gameMessage"></div>
+            <form id="createGameForm">
                 <div class="form-group">
                     <label for="gameName">Game Name:</label>
                     <input type="text" id="gameName" required placeholder="e.g., vs Warriors - Home Game">
@@ -406,11 +406,26 @@
                     <label for="gameDate">Game Date:</label>
                     <input type="date" id="gameDate" required>
                 </div>
+                <button type="submit">Create Game</button>
+            </form>
+        </div>
+
+        <!-- Upload Video Section -->
+        <div class="section">
+            <h2>Upload Video to Game</h2>
+            <div id="videoMessage"></div>
+            <form id="uploadVideoForm">
+                <div class="form-group">
+                    <label for="selectGameForVideo">Select Game:</label>
+                    <select id="selectGameForVideo" required>
+                        <option value="">-- Select a game --</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="gameVideo">Video File:</label>
                     <input type="file" id="gameVideo" accept="video/*" required>
                 </div>
-                <button type="submit">Upload Game</button>
+                <button type="submit">Upload Video</button>
             </form>
         </div>
 
@@ -747,31 +762,66 @@
 
         async function handleUploadGame(e) {
             e.preventDefault();
-            
+
             const form = e.target;
             const submitBtn = form.querySelector('button[type="submit"]');
-            const messageDiv = document.getElementById('uploadMessage');
-            
+            const messageDiv = document.getElementById('gameMessage');
+
             submitBtn.disabled = true;
-            messageDiv.innerHTML = '<div class="loading">Uploading video... This may take a while.</div>';
-            
+            messageDiv.innerHTML = '<div class="loading">Creating game...</div>';
+
             const formData = new FormData();
             formData.append('name', document.getElementById('gameName').value);
             formData.append('date', document.getElementById('gameDate').value);
-            formData.append('video', document.getElementById('gameVideo').files[0]);
-            
+
             try {
                 const response = await fetch(`${API_BASE}/games`, {
                     method: 'POST',
                     body: formData
                 });
-                
-                if (!response.ok) throw new Error('Upload failed');
-                
-                messageDiv.innerHTML = '<div class="success">Game uploaded successfully!</div>';
+
+                if (!response.ok) throw new Error('Failed to create game');
+
+                messageDiv.innerHTML = '<div class="success">Game created successfully! Now upload videos for this game.</div>';
                 form.reset();
                 loadGames();
-                
+
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handleUploadVideo(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const messageDiv = document.getElementById('videoMessage');
+            const gameId = document.getElementById('selectGameForVideo').value;
+
+            submitBtn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Uploading video... This may take a while.</div>';
+
+            const formData = new FormData();
+            formData.append('video', document.getElementById('gameVideo').files[0]);
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/videos`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                messageDiv.innerHTML = '<div class="success">Video uploaded successfully!</div>';
+                form.reset();
+                loadGames();
+
                 setTimeout(() => {
                     messageDiv.innerHTML = '';
                 }, 3000);
@@ -786,24 +836,24 @@
             try {
                 const response = await fetch(`${API_BASE}/games`);
                 const games = await response.json();
-                
+
                 // Update games list
                 const gamesListDiv = document.getElementById('gamesList');
                 if (games.length === 0) {
-                    gamesListDiv.innerHTML = '<p>No games uploaded yet.</p>';
+                    gamesListDiv.innerHTML = '<p>No games created yet.</p>';
                 } else {
                     gamesListDiv.innerHTML = games.map(game => `
                         <div class="game-item">
                             <div class="game-header">
                                 <div>
                                     <div class="game-title">${game.name}</div>
-                                    <div class="game-date">${new Date(game.date).toLocaleDateString()}</div>
+                                    <div class="game-date">${new Date(game.date).toLocaleDateString()} • ${game.video_count || 0} video(s)</div>
                                 </div>
                             </div>
                         </div>
                     `).join('');
                 }
-                
+
                 // Update game selectors
                 const options = games.map(game =>
                     `<option value="${game.id}">${game.name} - ${new Date(game.date).toLocaleDateString()}</option>`
@@ -814,11 +864,31 @@
 
                 document.getElementById('filterGame').innerHTML =
                     '<option value="">All Games</option>' + options;
-                
+
             } catch (error) {
                 console.error('Error loading games:', error);
-                document.getElementById('gamesList').innerHTML = 
+                document.getElementById('gamesList').innerHTML =
                     '<div class="error">Failed to load games</div>';
+            }
+        }
+
+        async function loadVideosForGame(gameId) {
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/videos`);
+                const videos = await response.json();
+
+                const selectVideo = document.getElementById('selectVideo');
+                if (videos.length === 0) {
+                    selectVideo.innerHTML = '<option value="">-- No videos available --</option>';
+                } else {
+                    const options = videos.map(video =>
+                        `<option value="${video.id}">${video.filename}</option>`
+                    ).join('');
+                    selectVideo.innerHTML = '<option value="">-- Select a video --</option>' + options;
+                }
+            } catch (error) {
+                console.error('Error loading videos:', error);
+                document.getElementById('selectVideo').innerHTML = '<option value="">-- Error loading videos --</option>';
             }
         }
 
