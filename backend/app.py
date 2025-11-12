@@ -53,15 +53,25 @@ async def lifespan(app: FastAPI):
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 name VARCHAR(255) NOT NULL,
                 date DATE NOT NULL,
-                video_path VARCHAR(500) NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         """)
-        
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS videos (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                filename VARCHAR(255) NOT NULL,
+                video_path VARCHAR(500) NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS clips (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
                 start_time VARCHAR(20) NOT NULL,
                 end_time VARCHAR(20) NOT NULL,
                 tags TEXT[] NOT NULL,
@@ -93,23 +103,32 @@ class GameCreate(BaseModel):
     name: str
     date: str
 
+class Game(BaseModel):
+    id: str
+    name: str
+    date: date
+    created_at: datetime
+    video_count: Optional[int] = 0
+
+class Video(BaseModel):
+    id: str
+    game_id: str
+    filename: str
+    video_path: str
+    uploaded_at: datetime
+
 class ClipCreate(BaseModel):
     game_id: str
+    video_id: str
     start_time: str
     end_time: str
     tags: List[str]
     notes: Optional[str] = None
 
-class Game(BaseModel):
-    id: str
-    name: str
-    date: date
-    video_path: str
-    created_at: datetime
-
 class Clip(BaseModel):
     id: str
     game_id: str
+    video_id: str
     start_time: str
     end_time: str
     tags: List[str]
@@ -206,10 +225,9 @@ async def health():
 @app.post("/games", response_model=Game)
 async def create_game(
     name: str = Form(...),
-    date: str = Form(...),
-    video: UploadFile = File(...)
+    date: str = Form(...)
 ):
-    """Upload a game video"""
+    """Create a new game"""
     # Parse date string to date object
     try:
         game_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -217,53 +235,112 @@ async def create_game(
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
     game_id = str(uuid.uuid4())
-    video_path = f"games/{game_id}/{video.filename}"
-    
-    # Upload to MinIO
-    minio_client = get_minio_client()
-    temp_file = f"/tmp/{uuid.uuid4()}_{video.filename}"
-    
-    with open(temp_file, "wb") as f:
-        content = await video.read()
-        f.write(content)
-    
-    try:
-        minio_client.fput_object(BUCKET_NAME, video_path, temp_file)
-    finally:
-        os.remove(temp_file)
-    
+
     # Save to database
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO games (id, name, date, video_path)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, name, date, video_path, created_at
+            INSERT INTO games (id, name, date)
+            VALUES ($1, $2, $3)
+            RETURNING id, name, date, created_at
             """,
-            uuid.UUID(game_id), name, game_date, video_path
+            uuid.UUID(game_id), name, game_date
         )
-    
+
     return {
         "id": str(row["id"]),
         "name": row["name"],
         "date": row["date"],
-        "video_path": row["video_path"],
-        "created_at": row["created_at"]
+        "created_at": row["created_at"],
+        "video_count": 0
     }
+
+@app.post("/games/{game_id}/videos", response_model=Video)
+async def upload_video(
+    game_id: str,
+    video: UploadFile = File(...)
+):
+    """Upload a video for a game"""
+    # Verify game exists
+    async with db_pool.acquire() as conn:
+        game = await conn.fetchrow("SELECT id FROM games WHERE id = $1", uuid.UUID(game_id))
+        if not game:
+            raise HTTPException(status_code=404, detail="Game not found")
+
+    video_id = str(uuid.uuid4())
+    video_path = f"games/{game_id}/{video_id}_{video.filename}"
+
+    # Upload to MinIO
+    minio_client = get_minio_client()
+    temp_file = f"/tmp/{uuid.uuid4()}_{video.filename}"
+
+    with open(temp_file, "wb") as f:
+        content = await video.read()
+        f.write(content)
+
+    try:
+        minio_client.fput_object(BUCKET_NAME, video_path, temp_file)
+    finally:
+        os.remove(temp_file)
+
+    # Save to database
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO videos (id, game_id, filename, video_path)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, game_id, filename, video_path, uploaded_at
+            """,
+            uuid.UUID(video_id), uuid.UUID(game_id), video.filename, video_path
+        )
+
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "filename": row["filename"],
+        "video_path": row["video_path"],
+        "uploaded_at": row["uploaded_at"]
+    }
+
+@app.get("/games/{game_id}/videos", response_model=List[Video])
+async def list_game_videos(game_id: str):
+    """List all videos for a game"""
+    async with db_pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM videos WHERE game_id = $1 ORDER BY uploaded_at DESC",
+            uuid.UUID(game_id)
+        )
+
+    return [
+        {
+            "id": str(row["id"]),
+            "game_id": str(row["game_id"]),
+            "filename": row["filename"],
+            "video_path": row["video_path"],
+            "uploaded_at": row["uploaded_at"]
+        }
+        for row in rows
+    ]
 
 @app.get("/games", response_model=List[Game])
 async def list_games():
     """List all games"""
     async with db_pool.acquire() as conn:
-        rows = await conn.fetch("SELECT * FROM games ORDER BY date DESC")
-    
+        rows = await conn.fetch("""
+            SELECT g.id, g.name, g.date, g.created_at, COUNT(v.id) as video_count
+            FROM games g
+            LEFT JOIN videos v ON g.id = v.game_id
+            GROUP BY g.id, g.name, g.date, g.created_at
+            ORDER BY g.date DESC
+        """)
+
     return [
         {
             "id": str(row["id"]),
             "name": row["name"],
             "date": row["date"],
-            "video_path": row["video_path"],
-            "created_at": row["created_at"]
+            "created_at": row["created_at"],
+            "video_count": row["video_count"]
         }
         for row in rows
     ]
@@ -273,63 +350,71 @@ async def get_game(game_id: str):
     """Get a specific game"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM games WHERE id = $1",
+            """
+            SELECT g.id, g.name, g.date, g.created_at, COUNT(v.id) as video_count
+            FROM games g
+            LEFT JOIN videos v ON g.id = v.game_id
+            WHERE g.id = $1
+            GROUP BY g.id, g.name, g.date, g.created_at
+            """,
             uuid.UUID(game_id)
         )
-    
+
     if not row:
         raise HTTPException(status_code=404, detail="Game not found")
-    
+
     return {
         "id": str(row["id"]),
         "name": row["name"],
         "date": row["date"],
-        "video_path": row["video_path"],
-        "created_at": row["created_at"]
+        "created_at": row["created_at"],
+        "video_count": row["video_count"]
     }
 
 @app.post("/clips", response_model=Clip)
 async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
-    """Create a new clip from a game"""
-    # Verify game exists
+    """Create a new clip from a game video"""
+    # Verify video exists
     async with db_pool.acquire() as conn:
-        game = await conn.fetchrow(
-            "SELECT video_path FROM games WHERE id = $1",
-            uuid.UUID(clip.game_id)
+        video = await conn.fetchrow(
+            "SELECT video_path FROM videos WHERE id = $1",
+            uuid.UUID(clip.video_id)
         )
-    
-    if not game:
-        raise HTTPException(status_code=404, detail="Game not found")
-    
+
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
     # Create clip record
     clip_id = str(uuid.uuid4())
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO clips (id, game_id, start_time, end_time, tags, notes)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, game_id, start_time, end_time, tags, notes, clip_path, status, created_at
+            INSERT INTO clips (id, game_id, video_id, start_time, end_time, tags, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, game_id, video_id, start_time, end_time, tags, notes, clip_path, status, created_at
             """,
             uuid.UUID(clip_id),
             uuid.UUID(clip.game_id),
+            uuid.UUID(clip.video_id),
             clip.start_time,
             clip.end_time,
             clip.tags,
             clip.notes
         )
-    
+
     # Queue clip processing
     background_tasks.add_task(
         process_clip,
         clip_id,
-        game["video_path"],
+        video["video_path"],
         clip.start_time,
         clip.end_time
     )
-    
+
     return {
         "id": str(row["id"]),
         "game_id": str(row["game_id"]),
+        "video_id": str(row["video_id"]),
         "start_time": row["start_time"],
         "end_time": row["end_time"],
         "tags": row["tags"],
@@ -362,6 +447,7 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
         {
             "id": str(row["id"]),
             "game_id": str(row["game_id"]),
+            "video_id": str(row["video_id"]),
             "start_time": row["start_time"],
             "end_time": row["end_time"],
             "tags": row["tags"],
