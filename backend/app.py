@@ -1,5 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Request
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 # Configuration from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://filmreview:filmreview@postgres:5432/filmreview")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_EXTERNAL_ENDPOINT = os.getenv("MINIO_EXTERNAL_ENDPOINT", "localhost:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
 MINIO_SECURE = os.getenv("MINIO_SECURE", "false").lower() == "true"
@@ -146,6 +147,15 @@ def get_minio_client():
         secure=MINIO_SECURE
     )
 
+def get_minio_client_external():
+    """Get MinIO client configured with external endpoint for presigned URLs"""
+    return Minio(
+        MINIO_EXTERNAL_ENDPOINT,
+        access_key=MINIO_ACCESS_KEY,
+        secret_key=MINIO_SECRET_KEY,
+        secure=MINIO_SECURE
+    )
+
 def time_to_seconds(time_str: str) -> str:
     """Convert mm:ss or hh:mm:ss to ffmpeg format"""
     parts = time_str.split(':')
@@ -154,6 +164,61 @@ def time_to_seconds(time_str: str) -> str:
     elif len(parts) == 3:
         return f"{parts[0].zfill(2)}:{parts[1].zfill(2)}:{parts[2].zfill(2)}"
     return time_str
+
+async def stream_video_with_range(request: Request, object_path: str, minio_client: Minio) -> Response:
+    """Stream video with support for HTTP Range requests for seeking/scrubbing"""
+    try:
+        # Get object metadata to know the file size
+        stat = minio_client.stat_object(BUCKET_NAME, object_path)
+        file_size = stat.size
+
+        # Parse range header
+        range_header = request.headers.get("range")
+
+        if range_header:
+            # Parse range header (format: "bytes=start-end")
+            range_match = range_header.replace("bytes=", "").split("-")
+            start = int(range_match[0]) if range_match[0] else 0
+            end = int(range_match[1]) if len(range_match) > 1 and range_match[1] else file_size - 1
+
+            # Ensure end doesn't exceed file size
+            end = min(end, file_size - 1)
+            content_length = end - start + 1
+
+            # Get the object with offset and length
+            response_data = minio_client.get_object(
+                BUCKET_NAME,
+                object_path,
+                offset=start,
+                length=content_length
+            )
+
+            # Return 206 Partial Content
+            return StreamingResponse(
+                response_data.stream(),
+                status_code=206,
+                media_type="video/mp4",
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{file_size}",
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": str(content_length),
+                    "Content-Disposition": "inline"
+                }
+            )
+        else:
+            # No range header, return full file
+            response_data = minio_client.get_object(BUCKET_NAME, object_path)
+            return StreamingResponse(
+                response_data.stream(),
+                media_type="video/mp4",
+                headers={
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": str(file_size),
+                    "Content-Disposition": "inline"
+                }
+            )
+    except S3Error as e:
+        raise HTTPException(status_code=404, detail=f"Video not found: {str(e)}")
 
 async def process_clip(clip_id: str, game_video_path: str, start_time: str, end_time: str):
     """Background task to extract video clip using ffmpeg"""
@@ -373,28 +438,50 @@ async def get_game(game_id: str):
 
 @app.get("/games/{game_id}/video")
 async def stream_game_video(game_id: str):
-    """Stream the game video"""
-    # Get game details
+    """Stream the first video for a game"""
+    # Get the first video for this game
     async with db_pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT video_path FROM games WHERE id = $1",
+        video = await conn.fetchrow(
+            "SELECT video_path FROM videos WHERE game_id = $1 ORDER BY uploaded_at ASC LIMIT 1",
             uuid.UUID(game_id)
         )
 
-    if not row:
-        raise HTTPException(status_code=404, detail="Game not found")
+    if not video:
+        raise HTTPException(status_code=404, detail="No videos found for this game")
 
-    video_path = row["video_path"]
+    video_path = video["video_path"]
+    # Use internal endpoint to connect to MinIO
     minio_client = get_minio_client()
 
     try:
         # Get presigned URL from MinIO (valid for 1 hour)
         url = minio_client.presigned_get_object(BUCKET_NAME, video_path, expires=timedelta(hours=1))
+        # Replace internal endpoint with external endpoint for browser access
+        url = url.replace(f"http://{MINIO_ENDPOINT}", f"http://{MINIO_EXTERNAL_ENDPOINT}")
+        print(f"Generated presigned URL: {url}")
         # Redirect to the presigned URL
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=url)
     except S3Error as e:
         raise HTTPException(status_code=404, detail=f"Video not found: {str(e)}")
+
+@app.get("/videos/{video_id}/stream")
+async def stream_video(video_id: str, request: Request):
+    """Stream a specific video by ID with range request support"""
+    # Get the video
+    async with db_pool.acquire() as conn:
+        video = await conn.fetchrow(
+            "SELECT video_path FROM videos WHERE id = $1",
+            uuid.UUID(video_id)
+        )
+
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    video_path = video["video_path"]
+    minio_client = get_minio_client()
+
+    return await stream_video_with_range(request, video_path, minio_client)
 
 @app.post("/clips", response_model=Clip)
 async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
@@ -484,6 +571,25 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
         for row in rows
     ]
 
+@app.get("/clips/{clip_id}/stream")
+async def stream_clip(clip_id: str, request: Request):
+    """Stream a processed clip for viewing with range request support"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT clip_path, status FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Clip not found")
+
+    if row["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Clip is not ready. Status: {row['status']}")
+
+    # Stream from MinIO with range support
+    minio_client = get_minio_client()
+    return await stream_video_with_range(request, row["clip_path"], minio_client)
+
 @app.get("/clips/{clip_id}/download")
 async def download_clip(clip_id: str):
     """Download a processed clip"""
@@ -492,13 +598,13 @@ async def download_clip(clip_id: str):
             "SELECT clip_path, status FROM clips WHERE id = $1",
             uuid.UUID(clip_id)
         )
-    
+
     if not row:
         raise HTTPException(status_code=404, detail="Clip not found")
-    
+
     if row["status"] != "completed":
         raise HTTPException(status_code=400, detail=f"Clip is not ready. Status: {row['status']}")
-    
+
     # Download from MinIO and stream
     minio_client = get_minio_client()
     try:
