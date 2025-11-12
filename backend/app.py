@@ -6,7 +6,7 @@ from typing import List, Optional
 import os
 import subprocess
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import asyncpg
 from minio import Minio
 from minio.error import S3Error
@@ -287,6 +287,31 @@ async def get_game(game_id: str):
         "video_path": row["video_path"],
         "created_at": row["created_at"]
     }
+
+@app.get("/games/{game_id}/video")
+async def stream_game_video(game_id: str):
+    """Stream the game video"""
+    # Get game details
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT video_path FROM games WHERE id = $1",
+            uuid.UUID(game_id)
+        )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    video_path = row["video_path"]
+    minio_client = get_minio_client()
+
+    try:
+        # Get presigned URL from MinIO (valid for 1 hour)
+        url = minio_client.presigned_get_object(BUCKET_NAME, video_path, expires=timedelta(hours=1))
+        # Redirect to the presigned URL
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=url)
+    except S3Error as e:
+        raise HTTPException(status_code=404, detail=f"Video not found: {str(e)}")
 
 @app.post("/clips", response_model=Clip)
 async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):

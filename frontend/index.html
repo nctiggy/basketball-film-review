@@ -265,6 +265,124 @@
             color: #e74c3c;
             font-weight: bold;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .modal-close {
+            color: #aaa;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .video-container {
+            width: 100%;
+            background: #000;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            width: 100%;
+            display: block;
+        }
+
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-mark {
+            background: #27ae60;
+            padding: 12px 24px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-mark:hover {
+            background: #229954;
+        }
+
+        .btn-mark:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .timestamp-display {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .timestamp-item {
+            text-align: center;
+        }
+
+        .timestamp-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .timestamp-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: monospace;
+        }
+
+        .clip-form-modal {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -300,35 +418,13 @@
         <div class="section">
             <h2>Create Clip</h2>
             <div id="clipMessage"></div>
-            <form id="clipForm">
-                <div class="form-group">
-                    <label for="selectGame">Select Game:</label>
-                    <select id="selectGame" required>
-                        <option value="">-- Select a game --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="startTime">Start Time (mm:ss or hh:mm:ss):</label>
-                    <input type="text" id="startTime" required placeholder="e.g., 05:30">
-                </div>
-                <div class="form-group">
-                    <label for="endTime">End Time (mm:ss or hh:mm:ss):</label>
-                    <input type="text" id="endTime" required placeholder="e.g., 05:45">
-                </div>
-                <div class="form-group">
-                    <label>Tags:</label>
-                    <div>
-                        <input type="text" id="tagInput" placeholder="Add a tag (e.g., defense, player name)">
-                        <button type="button" id="addTagBtn">Add Tag</button>
-                    </div>
-                    <div id="tagList" class="tag-list"></div>
-                </div>
-                <div class="form-group">
-                    <label for="notes">Notes (optional):</label>
-                    <textarea id="notes" placeholder="Add any notes about this play..."></textarea>
-                </div>
-                <button type="submit">Create Clip</button>
-            </form>
+            <div class="form-group">
+                <label for="selectGameForClip">Select Game to Create Clip:</label>
+                <select id="selectGameForClip">
+                    <option value="">-- Select a game --</option>
+                </select>
+            </div>
+            <button type="button" id="openClipModalBtn" disabled>Open Video to Create Clip</button>
         </div>
 
         <!-- Games List -->
@@ -354,9 +450,66 @@
         </div>
     </div>
 
+    <!-- Clip Creation Modal -->
+    <div id="clipModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Clip from Video</h2>
+                <span class="modal-close" id="closeModal">&times;</span>
+            </div>
+
+            <div class="video-container">
+                <video id="clipVideo" controls>
+                    <source id="videoSource" src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="video-controls">
+                <button type="button" class="btn-mark" id="markStartBtn">Mark Start Time</button>
+                <button type="button" class="btn-mark" id="markEndBtn" disabled>Mark End Time</button>
+            </div>
+
+            <div class="timestamp-display">
+                <div class="timestamp-item">
+                    <div class="timestamp-label">Current Time</div>
+                    <div class="timestamp-value" id="currentTimeDisplay">00:00</div>
+                </div>
+                <div class="timestamp-item">
+                    <div class="timestamp-label">Start Time</div>
+                    <div class="timestamp-value" id="startTimeDisplay">--:--</div>
+                </div>
+                <div class="timestamp-item">
+                    <div class="timestamp-label">End Time</div>
+                    <div class="timestamp-value" id="endTimeDisplay">--:--</div>
+                </div>
+            </div>
+
+            <div class="clip-form-modal">
+                <div class="form-group">
+                    <label>Tags (required):</label>
+                    <div>
+                        <input type="text" id="modalTagInput" placeholder="Add a tag (e.g., defense, player name)">
+                        <button type="button" id="modalAddTagBtn">Add Tag</button>
+                    </div>
+                    <div id="modalTagList" class="tag-list"></div>
+                </div>
+                <div class="form-group">
+                    <label for="modalNotes">Notes (optional):</label>
+                    <textarea id="modalNotes" placeholder="Add any notes about this play..."></textarea>
+                </div>
+                <button type="button" id="createClipBtn" disabled>Create Clip</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
         let selectedTags = [];
+        let modalSelectedTags = [];
+        let clipStartTime = null;
+        let clipEndTime = null;
+        let currentGameId = null;
 
         // Load games on page load
         document.addEventListener('DOMContentLoaded', () => {
@@ -368,18 +521,40 @@
         function setupEventListeners() {
             // Upload form
             document.getElementById('uploadForm').addEventListener('submit', handleUploadGame);
-            
-            // Clip form
-            document.getElementById('clipForm').addEventListener('submit', handleCreateClip);
-            
-            // Tag management
-            document.getElementById('addTagBtn').addEventListener('click', addTag);
-            document.getElementById('tagInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addTag();
+
+            // Game selection for clip creation
+            document.getElementById('selectGameForClip').addEventListener('change', handleGameSelection);
+
+            // Open modal button
+            document.getElementById('openClipModalBtn').addEventListener('click', openClipModal);
+
+            // Modal close
+            document.getElementById('closeModal').addEventListener('click', closeClipModal);
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('clipModal');
+                if (e.target === modal) {
+                    closeClipModal();
                 }
             });
+
+            // Video time update
+            document.getElementById('clipVideo').addEventListener('timeupdate', updateCurrentTime);
+
+            // Mark timestamps
+            document.getElementById('markStartBtn').addEventListener('click', markStartTime);
+            document.getElementById('markEndBtn').addEventListener('click', markEndTime);
+
+            // Modal tag management
+            document.getElementById('modalAddTagBtn').addEventListener('click', addModalTag);
+            document.getElementById('modalTagInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addModalTag();
+                }
+            });
+
+            // Create clip button
+            document.getElementById('createClipBtn').addEventListener('click', handleCreateClipFromModal);
 
             // Filter clips by game
             document.getElementById('filterGame').addEventListener('change', (e) => {
@@ -411,6 +586,163 @@
                     <span class="tag-remove" onclick="removeTag('${tag}')">&times;</span>
                 </div>
             `).join('');
+        }
+
+        // Modal tag management
+        function addModalTag() {
+            const input = document.getElementById('modalTagInput');
+            const tag = input.value.trim();
+
+            if (tag && !modalSelectedTags.includes(tag)) {
+                modalSelectedTags.push(tag);
+                renderModalTags();
+                input.value = '';
+                updateCreateClipButton();
+            }
+        }
+
+        function removeModalTag(tag) {
+            modalSelectedTags = modalSelectedTags.filter(t => t !== tag);
+            renderModalTags();
+            updateCreateClipButton();
+        }
+
+        function renderModalTags() {
+            const tagList = document.getElementById('modalTagList');
+            tagList.innerHTML = modalSelectedTags.map(tag => `
+                <div class="tag-item">
+                    <span>${tag}</span>
+                    <span class="tag-remove" onclick="removeModalTag('${tag}')">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        // Modal functions
+        function handleGameSelection(e) {
+            const gameId = e.target.value;
+            const openBtn = document.getElementById('openClipModalBtn');
+            openBtn.disabled = !gameId;
+            currentGameId = gameId;
+        }
+
+        async function openClipModal() {
+            if (!currentGameId) return;
+
+            // Fetch game details to get video path
+            try {
+                const response = await fetch(`${API_BASE}/games/${currentGameId}`);
+                const game = await response.json();
+
+                // Set video source - construct MinIO URL
+                const videoSource = document.getElementById('videoSource');
+                const video = document.getElementById('clipVideo');
+
+                // The video path from backend is like "games/{game_id}/{filename}"
+                // We need to construct the MinIO presigned URL or direct URL
+                videoSource.src = `${API_BASE}/games/${currentGameId}/video`;
+                video.load();
+
+                // Reset modal state
+                clipStartTime = null;
+                clipEndTime = null;
+                modalSelectedTags = [];
+                document.getElementById('modalNotes').value = '';
+                document.getElementById('startTimeDisplay').textContent = '--:--';
+                document.getElementById('endTimeDisplay').textContent = '--:--';
+                document.getElementById('markStartBtn').disabled = false;
+                document.getElementById('markEndBtn').disabled = true;
+                renderModalTags();
+                updateCreateClipButton();
+
+                // Show modal
+                document.getElementById('clipModal').style.display = 'block';
+            } catch (error) {
+                alert('Failed to load game video');
+                console.error(error);
+            }
+        }
+
+        function closeClipModal() {
+            const video = document.getElementById('clipVideo');
+            video.pause();
+            document.getElementById('clipModal').style.display = 'none';
+        }
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+
+            if (hrs > 0) {
+                return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateCurrentTime() {
+            const video = document.getElementById('clipVideo');
+            document.getElementById('currentTimeDisplay').textContent = formatTime(video.currentTime);
+        }
+
+        function markStartTime() {
+            const video = document.getElementById('clipVideo');
+            clipStartTime = video.currentTime;
+            document.getElementById('startTimeDisplay').textContent = formatTime(clipStartTime);
+            document.getElementById('markEndBtn').disabled = false;
+            updateCreateClipButton();
+        }
+
+        function markEndTime() {
+            const video = document.getElementById('clipVideo');
+            clipEndTime = video.currentTime;
+
+            if (clipEndTime <= clipStartTime) {
+                alert('End time must be after start time');
+                return;
+            }
+
+            document.getElementById('endTimeDisplay').textContent = formatTime(clipEndTime);
+            updateCreateClipButton();
+        }
+
+        function updateCreateClipButton() {
+            const btn = document.getElementById('createClipBtn');
+            btn.disabled = !(clipStartTime !== null && clipEndTime !== null && modalSelectedTags.length > 0);
+        }
+
+        async function handleCreateClipFromModal() {
+            const messageDiv = document.getElementById('clipMessage');
+            const btn = document.getElementById('createClipBtn');
+            btn.disabled = true;
+
+            const data = {
+                game_id: currentGameId,
+                start_time: formatTime(clipStartTime),
+                end_time: formatTime(clipEndTime),
+                tags: modalSelectedTags,
+                notes: document.getElementById('modalNotes').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/clips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Failed to create clip');
+
+                messageDiv.innerHTML = '<div class="success">Clip created! Processing will start in the background.</div>';
+                closeClipModal();
+                loadClips();
+
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                btn.disabled = false;
+            }
         }
 
         async function handleUploadGame(e) {
@@ -450,53 +782,6 @@
             }
         }
 
-        async function handleCreateClip(e) {
-            e.preventDefault();
-            
-            if (selectedTags.length === 0) {
-                alert('Please add at least one tag');
-                return;
-            }
-            
-            const form = e.target;
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const messageDiv = document.getElementById('clipMessage');
-            
-            submitBtn.disabled = true;
-            
-            const data = {
-                game_id: document.getElementById('selectGame').value,
-                start_time: document.getElementById('startTime').value,
-                end_time: document.getElementById('endTime').value,
-                tags: selectedTags,
-                notes: document.getElementById('notes').value
-            };
-            
-            try {
-                const response = await fetch(`${API_BASE}/clips`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (!response.ok) throw new Error('Failed to create clip');
-                
-                messageDiv.innerHTML = '<div class="success">Clip created! Processing will start in the background.</div>';
-                form.reset();
-                selectedTags = [];
-                renderTags();
-                loadClips();
-                
-                setTimeout(() => {
-                    messageDiv.innerHTML = '';
-                }, 3000);
-            } catch (error) {
-                messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            } finally {
-                submitBtn.disabled = false;
-            }
-        }
-
         async function loadGames() {
             try {
                 const response = await fetch(`${API_BASE}/games`);
@@ -520,14 +805,14 @@
                 }
                 
                 // Update game selectors
-                const options = games.map(game => 
+                const options = games.map(game =>
                     `<option value="${game.id}">${game.name} - ${new Date(game.date).toLocaleDateString()}</option>`
                 ).join('');
-                
-                document.getElementById('selectGame').innerHTML = 
+
+                document.getElementById('selectGameForClip').innerHTML =
                     '<option value="">-- Select a game --</option>' + options;
-                
-                document.getElementById('filterGame').innerHTML = 
+
+                document.getElementById('filterGame').innerHTML =
                     '<option value="">All Games</option>' + options;
                 
             } catch (error) {
