@@ -149,6 +149,15 @@
             font-size: 0.85em;
         }
 
+        .tag.clickable {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .tag.clickable:hover {
+            background: #2980b9;
+        }
+
         .status {
             display: inline-block;
             padding: 4px 12px;
@@ -184,6 +193,17 @@
         }
 
         .clip-actions button {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .game-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .game-actions button {
             padding: 8px 16px;
             font-size: 13px;
         }
@@ -285,9 +305,10 @@
             padding: 30px;
             border-radius: 8px;
             width: 90%;
-            max-width: 1200px;
+            max-width: 1400px;
             max-height: 90vh;
             overflow-y: auto;
+            position: relative;
         }
 
         .modal-header {
@@ -305,10 +326,12 @@
             font-weight: bold;
             cursor: pointer;
             line-height: 1;
+            transition: color 0.2s, transform 0.2s;
         }
 
         .modal-close:hover {
-            color: #000;
+            color: #e74c3c;
+            transform: scale(1.1);
         }
 
         .video-container {
@@ -324,12 +347,65 @@
             display: block;
         }
 
+        .clip-modal-body {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .clip-modal-video {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .clip-modal-video .video-container {
+            margin-bottom: 0;
+        }
+
+        .video-progress-bar {
+            background: #2c3e50;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .video-progress-bar input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .clip-modal-controls {
+            flex: 0 0 140px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .clip-modal-body {
+                flex-direction: column;
+            }
+
+            .clip-modal-controls {
+                flex: 1;
+                width: 100%;
+            }
+        }
+
         .video-controls {
             display: flex;
+            flex-direction: column;
             gap: 10px;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
+            margin: 0;
         }
 
         .btn-mark {
@@ -341,6 +417,8 @@
             cursor: pointer;
             font-weight: 600;
             transition: background 0.3s;
+            width: 100%;
+            font-size: 0.95em;
         }
 
         .btn-mark:hover {
@@ -354,34 +432,43 @@
 
         .timestamp-display {
             background: #ecf0f1;
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 4px;
-            margin: 15px 0;
+            margin: 0;
             display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 15px;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .timestamp-item {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid #d0d7dc;
+        }
+
+        .timestamp-item:last-child {
+            border-bottom: none;
         }
 
         .timestamp-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #7f8c8d;
-            margin-bottom: 5px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .timestamp-value {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: bold;
             color: #2c3e50;
             font-family: monospace;
         }
 
         .clip-form-modal {
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         .quick-tag {
@@ -408,6 +495,130 @@
             color: white;
             border-color: #229954;
         }
+
+        /* Coach Mode Styles */
+        #eraserBtn.active {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #drawingCanvas {
+            pointer-events: auto;
+        }
+
+        /* Custom Video Controls */
+        #videoProgress {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #34495e;
+            outline: none;
+        }
+
+        #videoProgress::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        #videoProgress::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+
+        #playPauseBtn:hover {
+            background: #2980b9;
+        }
+
+        #rewind5:hover, #forward5:hover {
+            background: #2c3e50;
+        }
+
+        #toggleCoachMode:hover {
+            opacity: 0.9;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .data-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .data-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .data-table .actions-cell {
+            white-space: nowrap;
+        }
+
+        .data-table .actions-cell button {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .video-list-item {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .video-list-item:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .video-info {
+            flex: 1;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .video-actions button {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -418,10 +629,235 @@
     </header>
 
     <div class="container">
-        <!-- Create Game Section -->
-        <div class="section">
-            <h2>Create New Game</h2>
-            <div id="gameMessage"></div>
+        <!-- Games List View (Main View) -->
+        <div id="gamesListView">
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Games</h2>
+                    <button onclick="showCreateGameModal()">+ Create New Game</button>
+                </div>
+                <div id="gamesTableContainer">
+                    <div class="loading">Loading games...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Detail View (Hidden by default) -->
+        <div id="gameDetailView" style="display: none;">
+            <!-- Navigation -->
+            <div style="margin-bottom: 20px;">
+                <button onclick="showGamesListView()" class="btn-secondary">← Back to Games</button>
+            </div>
+
+            <!-- Game Header -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 id="gameDetailName" style="margin: 0;"></h2>
+                        <div id="gameDetailDate" style="color: #666; margin-top: 5px;"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="editCurrentGame()">Edit Game</button>
+                        <button class="btn-danger" onclick="deleteCurrentGame()">Delete Game</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Videos Section -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Videos</h3>
+                    <button onclick="showUploadVideoModal()">+ Upload Video</button>
+                </div>
+                <div id="gameVideosContainer">
+                    <div class="loading">Loading videos...</div>
+                </div>
+            </div>
+
+            <!-- Clips Section -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Clips</h3>
+                </div>
+
+                <!-- Clip Filters -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 200px;">
+                        <label for="clipTagFilter" style="margin-bottom: 5px;">Filter by Tag:</label>
+                        <input type="text" id="clipTagFilter" placeholder="Enter tag to filter...">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label for="clipSortOrder" style="margin-bottom: 5px;">Sort:</label>
+                        <select id="clipSortOrder">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                        </select>
+                    </div>
+                    <div style="align-self: flex-end;">
+                        <button onclick="applyClipFilters()" class="btn-secondary">Apply Filters</button>
+                        <button onclick="clearClipFilters()" class="btn-secondary">Clear</button>
+                    </div>
+                </div>
+
+                <div id="gameClipsContainer">
+                    <div class="loading">Loading clips...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clip Creation Modal -->
+    <div id="clipModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeModal" style="position: absolute; top: 15px; right: 20px; z-index: 10;">&times;</span>
+
+            <div class="clip-modal-body">
+                <!-- Video Section -->
+                <div class="clip-modal-video">
+                    <div class="video-container">
+                        <video id="clipVideo" controls muted>
+                            <source id="videoSource" src="" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+
+                <!-- Controls Section -->
+                <div class="clip-modal-controls">
+                    <div class="video-controls">
+                        <button type="button" class="btn-mark" id="markStartBtn">Mark Start Time</button>
+                        <button type="button" class="btn-mark" id="markEndBtn" disabled>Mark End Time</button>
+                    </div>
+
+                    <div class="timestamp-display">
+                        <div class="timestamp-item">
+                            <div class="timestamp-label">Current Time</div>
+                            <div class="timestamp-value" id="currentTimeDisplay">00:00</div>
+                        </div>
+                        <div class="timestamp-item">
+                            <div class="timestamp-label">Start Time</div>
+                            <div class="timestamp-value" id="startTimeDisplay">--:--</div>
+                        </div>
+                        <div class="timestamp-item">
+                            <div class="timestamp-label">End Time</div>
+                            <div class="timestamp-value" id="endTimeDisplay">--:--</div>
+                        </div>
+                    </div>
+
+                    <div class="clip-form-modal">
+                        <div class="form-group">
+                            <label>Tags (required):</label>
+                            <div id="quickTagsContainer" style="margin-bottom: 10px;"></div>
+                            <div>
+                                <input type="text" id="modalTagInput" list="tagSuggestions" placeholder="Add a tag (e.g., defense, player name)">
+                                <datalist id="tagSuggestions"></datalist>
+                                <button type="button" id="modalAddTagBtn">Add Tag</button>
+                            </div>
+                            <div id="modalTagList" class="tag-list"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="modalNotes">Notes (optional):</label>
+                            <textarea id="modalNotes" placeholder="Add any notes about this play..."></textarea>
+                        </div>
+                        <button type="button" id="createClipBtn" disabled>Create Clip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clip View Modal -->
+    <div id="viewClipModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeViewModal" style="position: absolute; top: 15px; right: 20px; z-index: 10;">&times;</span>
+
+            <div class="clip-modal-body">
+                <!-- Video Section -->
+                <div class="clip-modal-video">
+                    <div class="video-container" id="viewClipContainer" style="position: relative; margin-bottom: 0;">
+                        <video id="viewClipVideo" muted>
+                            <source id="viewClipSource" src="" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <canvas id="drawingCanvas" style="position: absolute; top: 0; left: 0; display: none; cursor: crosshair; touch-action: none;"></canvas>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="video-progress-bar">
+                        <input type="range" id="videoProgress" min="0" max="100" value="0" step="0.1">
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls Sidebar -->
+                <div class="clip-modal-controls">
+                    <!-- Coach Mode Toggle -->
+                    <button id="toggleCoachMode" style="width: 100%; padding: 8px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                        🏀 Coach Mode
+                    </button>
+
+                    <!-- Custom Video Controls -->
+                    <div id="customVideoControls" style="display: flex; flex-direction: column; gap: 6px;">
+                        <button id="playPauseBtn" style="width: 100%; background: #3498db; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            ▶ Play
+                        </button>
+
+                        <button id="rewind5" style="width: 100%; background: #34495e; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 11px;">
+                            ⏪ 5s
+                        </button>
+
+                        <button id="forward5" style="width: 100%; background: #34495e; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 11px;">
+                            5s ⏩
+                        </button>
+
+                        <select id="playbackSpeed" style="width: 100%; background: #34495e; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 11px;">
+                            <option value="0.25">0.25x</option>
+                            <option value="0.5">0.5x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </div>
+
+                    <!-- Coach Mode Tools -->
+                    <div id="coachModeTools" style="display: none; padding: 12px; background: #f8f9fa; border-radius: 4px;">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 5px;">Color:</label>
+                            <input type="color" id="penColor" value="#e74c3c" style="width: 100%; height: 35px; border: none; cursor: pointer; border-radius: 4px;">
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 5px;">Size: <span id="penSizeDisplay">4px</span></label>
+                            <input type="range" id="penSize" min="2" max="20" value="4" style="width: 100%;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button id="eraserBtn" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">Eraser</button>
+                            <button id="clearCanvas" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">Clear All</button>
+                            <button id="saveDrawing" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">💾 Save Drawing</button>
+                        </div>
+                    </div>
+
+                    <!-- Clip Info -->
+                    <div id="viewClipInfo" style="padding: 12px; background: #f8f9fa; border-radius: 4px;">
+                        <div class="clip-times" id="viewClipTimes" style="margin-bottom: 8px;"></div>
+                        <div class="tags" id="viewClipTags" style="margin-bottom: 8px;"></div>
+                        <div id="viewClipNotes" style="color: #666; font-size: 13px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Game Modal -->
+    <div id="createGameModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Create New Game</h2>
+                <span class="modal-close" onclick="closeCreateGameModal()">&times;</span>
+            </div>
+            <div id="createGameMessage"></div>
             <form id="createGameForm">
                 <div class="form-group">
                     <label for="gameName">Game Name:</label>
@@ -434,18 +870,17 @@
                 <button type="submit">Create Game</button>
             </form>
         </div>
+    </div>
 
-        <!-- Upload Video Section -->
-        <div class="section">
-            <h2>Upload Video to Game</h2>
-            <div id="videoMessage"></div>
+    <!-- Upload Video Modal -->
+    <div id="uploadVideoModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Upload Video</h2>
+                <span class="modal-close" onclick="closeUploadVideoModal()">&times;</span>
+            </div>
+            <div id="uploadVideoMessage"></div>
             <form id="uploadVideoForm">
-                <div class="form-group">
-                    <label for="selectGameForVideo">Select Game:</label>
-                    <select id="selectGameForVideo" required>
-                        <option value="">-- Select a game --</option>
-                    </select>
-                </div>
                 <div class="form-group">
                     <label for="gameVideo">Video File:</label>
                     <input type="file" id="gameVideo" accept="video/*" required>
@@ -453,126 +888,80 @@
                 <button type="submit">Upload Video</button>
             </form>
         </div>
+    </div>
 
-        <!-- Create Clip Section -->
-        <div class="section">
-            <h2>Create Clip</h2>
-            <div id="clipMessage"></div>
-            <div class="form-group">
-                <label for="selectGameForClip">Select Game to Create Clip:</label>
-                <select id="selectGameForClip">
-                    <option value="">-- Select a game --</option>
-                </select>
+    <!-- Edit Game Modal -->
+    <div id="editGameModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Edit Game</h2>
+                <span class="modal-close" onclick="closeEditGameModal()">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="selectVideoForClip">Select Video:</label>
-                <select id="selectVideoForClip" disabled>
-                    <option value="">-- Select a game first --</option>
-                </select>
-            </div>
-            <button type="button" id="openClipModalBtn" disabled>Open Video to Create Clip</button>
-        </div>
-
-        <!-- Games List -->
-        <div class="section">
-            <h2>Games</h2>
-            <div id="gamesList" class="game-list">
-                <div class="loading">Loading games...</div>
-            </div>
-        </div>
-
-        <!-- Clips List -->
-        <div class="section">
-            <h2>Clips</h2>
-            <div class="form-group">
-                <label for="filterGame">Filter by Game:</label>
-                <select id="filterGame">
-                    <option value="">All Games</option>
-                </select>
-            </div>
-            <div id="clipsList" class="clip-list">
-                <div class="loading">Loading clips...</div>
-            </div>
+            <form id="editGameForm">
+                <input type="hidden" id="editGameId">
+                <div class="form-group">
+                    <label for="editGameName">Game Name</label>
+                    <input type="text" id="editGameName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editGameDate">Game Date</label>
+                    <input type="date" id="editGameDate" required>
+                </div>
+                <button type="submit">Save Changes</button>
+            </form>
         </div>
     </div>
 
-    <!-- Clip Creation Modal -->
-    <div id="clipModal" class="modal">
-        <div class="modal-content">
+    <!-- Edit Clip Modal -->
+    <div id="editClipModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h2>Create Clip from Video</h2>
-                <span class="modal-close" id="closeModal">&times;</span>
+                <h2>Edit Clip</h2>
+                <span class="modal-close" onclick="closeEditClipModal()">&times;</span>
             </div>
-
-            <div class="video-container">
-                <video id="clipVideo" controls muted>
-                    <source id="videoSource" src="" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-
-            <div class="video-controls">
-                <button type="button" class="btn-mark" id="markStartBtn">Mark Start Time</button>
-                <button type="button" class="btn-mark" id="markEndBtn" disabled>Mark End Time</button>
-            </div>
-
-            <div class="timestamp-display">
-                <div class="timestamp-item">
-                    <div class="timestamp-label">Current Time</div>
-                    <div class="timestamp-value" id="currentTimeDisplay">00:00</div>
-                </div>
-                <div class="timestamp-item">
-                    <div class="timestamp-label">Start Time</div>
-                    <div class="timestamp-value" id="startTimeDisplay">--:--</div>
-                </div>
-                <div class="timestamp-item">
-                    <div class="timestamp-label">End Time</div>
-                    <div class="timestamp-value" id="endTimeDisplay">--:--</div>
-                </div>
-            </div>
-
-            <div class="clip-form-modal">
+            <form id="editClipForm">
+                <input type="hidden" id="editClipId">
+                <input type="hidden" id="editClipGameId">
+                <input type="hidden" id="editClipVideoId">
                 <div class="form-group">
-                    <label>Tags (required):</label>
-                    <div id="quickTagsContainer" style="margin-bottom: 10px;"></div>
-                    <div>
-                        <input type="text" id="modalTagInput" list="tagSuggestions" placeholder="Add a tag (e.g., defense, player name)">
-                        <datalist id="tagSuggestions"></datalist>
-                        <button type="button" id="modalAddTagBtn">Add Tag</button>
+                    <label for="editClipStartTime">Start Time (mm:ss or hh:mm:ss)</label>
+                    <input type="text" id="editClipStartTime" placeholder="5:30" required>
+                </div>
+                <div class="form-group">
+                    <label for="editClipEndTime">End Time (mm:ss or hh:mm:ss)</label>
+                    <input type="text" id="editClipEndTime" placeholder="5:45" required>
+                </div>
+                <div class="form-group">
+                    <label>Tags</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="editClipTagInput" placeholder="Add a tag">
+                        <button type="button" onclick="addEditClipTag()">Add Tag</button>
                     </div>
-                    <div id="modalTagList" class="tag-list"></div>
+                    <div id="editClipTagList" class="tag-list"></div>
                 </div>
                 <div class="form-group">
-                    <label for="modalNotes">Notes (optional):</label>
-                    <textarea id="modalNotes" placeholder="Add any notes about this play..."></textarea>
+                    <label for="editClipNotes">Notes</label>
+                    <textarea id="editClipNotes"></textarea>
                 </div>
-                <button type="button" id="createClipBtn" disabled>Create Clip</button>
-            </div>
+                <button type="submit">Save Changes</button>
+            </form>
         </div>
     </div>
 
-    <!-- Clip View Modal -->
-    <div id="viewClipModal" class="modal">
+    <!-- Manage Videos Modal -->
+    <div id="manageVideosModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>View Clip</h2>
-                <span class="modal-close" id="closeViewModal">&times;</span>
+                <h2 id="manageVideosTitle">Manage Videos</h2>
+                <span class="modal-close" onclick="closeManageVideosModal()">&times;</span>
             </div>
-
-            <div class="video-container">
-                <video id="viewClipVideo" controls muted>
-                    <source id="viewClipSource" src="" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-
-            <div id="viewClipInfo" style="margin-top: 20px;">
-                <div class="clip-times" id="viewClipTimes"></div>
-                <div class="tags" id="viewClipTags"></div>
-                <div id="viewClipNotes" style="margin-top: 10px; color: #666;"></div>
-            </div>
+            <div id="videosList"></div>
         </div>
     </div>
+
+    <footer style="text-align: center; padding: 20px; color: #666; font-size: 13px; border-top: 1px solid #e0e0e0; margin-top: 40px;">
+        <p>Basketball Film Review v1.0.0</p>
+    </footer>
 
     <script>
         const API_BASE = '/api';
@@ -582,13 +971,15 @@
         let clipEndTime = null;
         let currentGameId = null;
         let currentVideoId = null;
+        let currentGameData = null;
         let allTags = new Set();
         let tagFrequency = {};
+        let currentClipFilter = '';
+        let currentClipSort = 'newest';
 
         // Load games on page load
         document.addEventListener('DOMContentLoaded', () => {
-            loadGames();
-            loadClips();
+            loadGamesTable();
             setupEventListeners();
         });
 
@@ -599,21 +990,21 @@
             // Upload video form
             document.getElementById('uploadVideoForm').addEventListener('submit', handleUploadVideo);
 
-            // Game selection for clip creation
-            document.getElementById('selectGameForClip').addEventListener('change', handleGameSelection);
-
-            // Video selection for clip creation
-            document.getElementById('selectVideoForClip').addEventListener('change', handleVideoSelection);
-
-            // Open modal button
-            document.getElementById('openClipModalBtn').addEventListener('click', openClipModal);
-
             // Modal close
             document.getElementById('closeModal').addEventListener('click', closeClipModal);
             window.addEventListener('click', (e) => {
                 const modal = document.getElementById('clipModal');
                 if (e.target === modal) {
                     closeClipModal();
+                }
+            });
+
+            // View clip modal close
+            document.getElementById('closeViewModal').addEventListener('click', closeViewClipModal);
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('viewClipModal');
+                if (e.target === modal) {
+                    closeViewClipModal();
                 }
             });
 
@@ -777,6 +1168,10 @@
                 updateCreateClipButton();
                 updateQuickTagStyles();
 
+                // Update tag suggestions and quick tags
+                updateTagSuggestions();
+                updateQuickTags();
+
                 // Show modal
                 document.getElementById('clipModal').style.display = 'block';
             } catch (error) {
@@ -865,7 +1260,9 @@
                 resetClipForm();
 
                 // Reload clips list in background
-                loadClips();
+                if (currentGameId) {
+                    loadGameClips(currentGameId);
+                }
 
             } catch (error) {
                 showModalErrorMessage(`Error: ${error.message}`);
@@ -929,7 +1326,7 @@
 
             const form = e.target;
             const submitBtn = form.querySelector('button[type="submit"]');
-            const messageDiv = document.getElementById('gameMessage');
+            const messageDiv = document.getElementById('createGameMessage');
 
             submitBtn.disabled = true;
             messageDiv.innerHTML = '<div class="loading">Creating game...</div>';
@@ -946,13 +1343,15 @@
 
                 if (!response.ok) throw new Error('Failed to create game');
 
-                messageDiv.innerHTML = '<div class="success">Game created successfully! Now upload videos for this game.</div>';
+                const game = await response.json();
+
+                messageDiv.innerHTML = '<div class="success">Game created successfully!</div>';
                 form.reset();
-                loadGames();
 
                 setTimeout(() => {
-                    messageDiv.innerHTML = '';
-                }, 3000);
+                    closeCreateGameModal();
+                    showGameDetailView(game.id);
+                }, 1000);
             } catch (error) {
                 messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             } finally {
@@ -965,8 +1364,12 @@
 
             const form = e.target;
             const submitBtn = form.querySelector('button[type="submit"]');
-            const messageDiv = document.getElementById('videoMessage');
-            const gameId = document.getElementById('selectGameForVideo').value;
+            const messageDiv = document.getElementById('uploadVideoMessage');
+
+            if (!currentGameId) {
+                messageDiv.innerHTML = '<div class="error">No game selected</div>';
+                return;
+            }
 
             submitBtn.disabled = true;
             messageDiv.innerHTML = '<div class="loading">Uploading video... This may take a while.</div>';
@@ -975,7 +1378,7 @@
             formData.append('video', document.getElementById('gameVideo').files[0]);
 
             try {
-                const response = await fetch(`${API_BASE}/games/${gameId}/videos`, {
+                const response = await fetch(`${API_BASE}/games/${currentGameId}/videos`, {
                     method: 'POST',
                     body: formData
                 });
@@ -984,11 +1387,11 @@
 
                 messageDiv.innerHTML = '<div class="success">Video uploaded successfully!</div>';
                 form.reset();
-                loadGames();
 
                 setTimeout(() => {
-                    messageDiv.innerHTML = '';
-                }, 3000);
+                    closeUploadVideoModal();
+                    loadGameVideos(currentGameId);
+                }, 1000);
             } catch (error) {
                 messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             } finally {
@@ -996,46 +1399,216 @@
             }
         }
 
-        async function loadGames() {
+        // ===== VIEW MANAGEMENT =====
+        function showGamesListView() {
+            document.getElementById('gamesListView').style.display = 'block';
+            document.getElementById('gameDetailView').style.display = 'none';
+            currentGameId = null;
+            currentGameData = null;
+            loadGamesTable();
+        }
+
+        function showGameDetailView(gameId) {
+            currentGameId = gameId;
+            document.getElementById('gamesListView').style.display = 'none';
+            document.getElementById('gameDetailView').style.display = 'block';
+            loadGameDetail(gameId);
+        }
+
+        // ===== GAMES TABLE =====
+        async function loadGamesTable() {
             try {
                 const response = await fetch(`${API_BASE}/games`);
                 const games = await response.json();
 
-                // Update games list
-                const gamesListDiv = document.getElementById('gamesList');
+                const container = document.getElementById('gamesTableContainer');
                 if (games.length === 0) {
-                    gamesListDiv.innerHTML = '<p>No games created yet.</p>';
+                    container.innerHTML = '<p>No games created yet. Click "Create New Game" to get started.</p>';
                 } else {
-                    gamesListDiv.innerHTML = games.map(game => `
-                        <div class="game-item">
-                            <div class="game-header">
-                                <div>
-                                    <div class="game-title">${game.name}</div>
-                                    <div class="game-date">${new Date(game.date).toLocaleDateString()} • ${game.video_count || 0} video(s)</div>
+                    // Sort by date descending (newest first)
+                    games.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    container.innerHTML = `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Game Name</th>
+                                    <th>Date</th>
+                                    <th>Videos</th>
+                                    <th>Clips</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${games.map(game => `
+                                    <tr onclick="showGameDetailView('${game.id}')">
+                                        <td><strong>${game.name}</strong></td>
+                                        <td>${new Date(game.date).toLocaleDateString()}</td>
+                                        <td>${game.video_count || 0}</td>
+                                        <td>-</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading games:', error);
+                document.getElementById('gamesTableContainer').innerHTML =
+                    '<div class="error">Failed to load games</div>';
+            }
+        }
+
+        // ===== GAME DETAIL VIEW =====
+        async function loadGameDetail(gameId) {
+            try {
+                // Load game info
+                const gameResponse = await fetch(`${API_BASE}/games/${gameId}`);
+                const game = await gameResponse.json();
+                currentGameData = game;
+
+                document.getElementById('gameDetailName').textContent = game.name;
+                document.getElementById('gameDetailDate').textContent = new Date(game.date).toLocaleDateString();
+
+                // Load videos for this game
+                await loadGameVideos(gameId);
+
+                // Load clips for this game
+                await loadGameClips(gameId);
+
+            } catch (error) {
+                console.error('Error loading game detail:', error);
+                alert('Failed to load game details');
+                showGamesListView();
+            }
+        }
+
+        async function loadGameVideos(gameId) {
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/videos`);
+                const videos = await response.json();
+
+                const container = document.getElementById('gameVideosContainer');
+
+                if (videos.length === 0) {
+                    container.innerHTML = '<p>No videos uploaded yet. Click "Upload Video" to add one.</p>';
+                } else {
+                    container.innerHTML = videos.map(video => `
+                        <div class="video-list-item">
+                            <div class="video-info">
+                                <div><strong>${video.filename}</strong></div>
+                                <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                                    Uploaded: ${new Date(video.uploaded_at).toLocaleString()}
                                 </div>
+                            </div>
+                            <div class="video-actions">
+                                <button onclick="event.stopPropagation(); showCreateClipInterface('${video.id}')">Create Clip</button>
+                                <button class="btn-secondary" onclick="event.stopPropagation(); renameVideo('${video.id}', '${video.filename.replace(/'/g, "\\'")}')">Rename</button>
+                                <button class="btn-danger" onclick="event.stopPropagation(); deleteVideo('${video.id}', '${video.filename.replace(/'/g, "\\'")}')">Delete</button>
                             </div>
                         </div>
                     `).join('');
                 }
-
-                // Update game selectors
-                const options = games.map(game =>
-                    `<option value="${game.id}">${game.name} - ${new Date(game.date).toLocaleDateString()}</option>`
-                ).join('');
-
-                document.getElementById('selectGameForClip').innerHTML =
-                    '<option value="">-- Select a game --</option>' + options;
-
-                document.getElementById('selectGameForVideo').innerHTML =
-                    '<option value="">-- Select a game --</option>' + options;
-
-                document.getElementById('filterGame').innerHTML =
-                    '<option value="">All Games</option>' + options;
-
             } catch (error) {
-                console.error('Error loading games:', error);
-                document.getElementById('gamesList').innerHTML =
-                    '<div class="error">Failed to load games</div>';
+                console.error('Error loading videos:', error);
+                document.getElementById('gameVideosContainer').innerHTML = '<div class="error">Failed to load videos</div>';
+            }
+        }
+
+        async function loadGameClips(gameId) {
+            try {
+                const url = `${API_BASE}/clips?game_id=${gameId}`;
+                const response = await fetch(url);
+                let clips = await response.json();
+
+                // Apply filtering
+                if (currentClipFilter) {
+                    clips = clips.filter(clip =>
+                        clip.tags.some(tag => tag.toLowerCase().includes(currentClipFilter.toLowerCase()))
+                    );
+                }
+
+                // Apply sorting
+                if (currentClipSort === 'newest') {
+                    clips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                } else {
+                    clips.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                }
+
+                // Collect tags
+                tagFrequency = {};
+                allTags.clear();
+                clips.forEach(clip => {
+                    clip.tags.forEach(tag => {
+                        allTags.add(tag);
+                        tagFrequency[tag] = (tagFrequency[tag] || 0) + 1;
+                    });
+                });
+
+                const container = document.getElementById('gameClipsContainer');
+                if (clips.length === 0) {
+                    container.innerHTML = '<p>No clips created yet.</p>';
+                } else {
+                    container.innerHTML = `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time Range</th>
+                                    <th>Tags</th>
+                                    <th>Notes</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${clips.map(clip => `
+                                    <tr>
+                                        <td><strong>${clip.start_time} → ${clip.end_time}</strong></td>
+                                        <td>${clip.tags.map(tag => `<span class="tag clickable" onclick="filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join(' ')}</td>
+                                        <td>${clip.notes || '-'}</td>
+                                        <td><span class="status status-${clip.status}">${clip.status.toUpperCase()}</span></td>
+                                        <td class="actions-cell">
+                                            ${clip.status === 'completed' ?
+                                                `<button class="btn-secondary" onclick="viewClipInline('${clip.id}')">View</button>
+                                                <button class="btn-secondary" onclick="downloadClip('${clip.id}')">Download</button>` :
+                                                ''}
+                                            <button class="btn-secondary" onclick="showEditClipModal('${clip.id}')">Edit</button>
+                                            <button class="btn-danger" onclick="deleteClipInline('${clip.id}')">Delete</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading clips:', error);
+                document.getElementById('gameClipsContainer').innerHTML = '<div class="error">Failed to load clips</div>';
+            }
+        }
+
+        function applyClipFilters() {
+            currentClipFilter = document.getElementById('clipTagFilter').value;
+            currentClipSort = document.getElementById('clipSortOrder').value;
+            if (currentGameId) {
+                loadGameClips(currentGameId);
+            }
+        }
+
+        function clearClipFilters() {
+            document.getElementById('clipTagFilter').value = '';
+            document.getElementById('clipSortOrder').value = 'newest';
+            currentClipFilter = '';
+            currentClipSort = 'newest';
+            if (currentGameId) {
+                loadGameClips(currentGameId);
+            }
+        }
+
+        function filterByTag(tag) {
+            document.getElementById('clipTagFilter').value = tag;
+            currentClipFilter = tag;
+            if (currentGameId) {
+                loadGameClips(currentGameId);
             }
         }
 
@@ -1108,6 +1681,7 @@
                                 `<button class="view-clip-btn" data-clip-id="${clip.id}">View Clip</button>
                                 <button class="btn-secondary" onclick="downloadClip('${clip.id}')">Download</button>` :
                                 ''}
+                            <button class="btn-secondary" onclick="showEditClipModal('${clip.id}')">Edit</button>
                             <button class="btn-danger" onclick="deleteClip('${clip.id}')">Delete</button>
                         </div>
                     </div>
@@ -1153,6 +1727,360 @@
             }
         }
 
+        // ===== MODAL FUNCTIONS =====
+        function showCreateGameModal() {
+            document.getElementById('createGameModal').style.display = 'block';
+        }
+
+        function closeCreateGameModal() {
+            document.getElementById('createGameModal').style.display = 'none';
+            document.getElementById('createGameForm').reset();
+        }
+
+        function showUploadVideoModal() {
+            if (!currentGameId) {
+                alert('No game selected');
+                return;
+            }
+            document.getElementById('uploadVideoModal').style.display = 'block';
+        }
+
+        function closeUploadVideoModal() {
+            document.getElementById('uploadVideoModal').style.display = 'none';
+            document.getElementById('uploadVideoForm').reset();
+        }
+
+        function editCurrentGame() {
+            if (!currentGameData) return;
+            showEditGameModal(currentGameData.id, currentGameData.name, currentGameData.date);
+        }
+
+        async function deleteCurrentGame() {
+            if (!currentGameData) return;
+            if (!confirm(`Are you sure you want to delete "${currentGameData.name}"? This will also delete all videos and clips for this game.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${currentGameData.id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                alert('Game deleted successfully!');
+                showGamesListView();
+            } catch (error) {
+                alert(`Error deleting game: ${error.message}`);
+            }
+        }
+
+        function showCreateClipInterface(videoId) {
+            if (!currentGameId || !videoId) return;
+            currentVideoId = videoId;
+            openClipModal();
+        }
+
+        async function renameVideo(videoId, currentName) {
+            const newName = prompt('Enter new filename:', currentName);
+            if (!newName || newName === currentName) return;
+
+            const formData = new FormData();
+            formData.append('filename', newName);
+
+            try {
+                const response = await fetch(`${API_BASE}/videos/${videoId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Rename failed');
+
+                if (currentGameId) {
+                    await loadGameVideos(currentGameId);
+                }
+                alert('Video renamed successfully!');
+            } catch (error) {
+                alert(`Error renaming video: ${error.message}`);
+            }
+        }
+
+        async function deleteVideo(videoId, filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"? This will also delete all clips made from this video.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/videos/${videoId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                if (currentGameId) {
+                    await loadGameVideos(currentGameId);
+                    await loadGameClips(currentGameId);
+                }
+                alert('Video deleted successfully!');
+            } catch (error) {
+                alert(`Error deleting video: ${error.message}`);
+            }
+        }
+
+        function viewClipInline(clipId) {
+            // Just use the existing viewClip function, but we need to get clip data
+            fetch(`${API_BASE}/clips/${clipId}`)
+                .then(r => r.json())
+                .then(clip => {
+                    viewClip(clipId, clip.start_time, clip.end_time, clip.tags, clip.notes);
+                });
+        }
+
+        async function deleteClipInline(clipId) {
+            if (!confirm('Are you sure you want to delete this clip?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/clips/${clipId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                if (currentGameId) {
+                    await loadGameClips(currentGameId);
+                }
+            } catch (error) {
+                alert(`Error deleting clip: ${error.message}`);
+            }
+        }
+
+        // Game CRUD functions
+        function showEditGameModal(gameId, gameName, gameDate) {
+            document.getElementById('editGameId').value = gameId;
+            document.getElementById('editGameName').value = gameName;
+            document.getElementById('editGameDate').value = gameDate;
+            document.getElementById('editGameModal').style.display = 'block';
+        }
+
+        function closeEditGameModal() {
+            document.getElementById('editGameModal').style.display = 'none';
+        }
+
+        document.getElementById('editGameForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const gameId = document.getElementById('editGameId').value;
+            const name = document.getElementById('editGameName').value;
+            const date = document.getElementById('editGameDate').value;
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('date', date);
+
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Update failed');
+
+                closeEditGameModal();
+
+                // If we're in detail view, reload it; otherwise reload table
+                if (currentGameId === gameId) {
+                    loadGameDetail(gameId);
+                } else {
+                    loadGamesTable();
+                }
+
+                alert('Game updated successfully!');
+            } catch (error) {
+                alert(`Error updating game: ${error.message}`);
+            }
+        });
+
+        // Clip Edit functions
+        let editClipSelectedTags = [];
+
+        async function showEditClipModal(clipId) {
+            try {
+                const response = await fetch(`${API_BASE}/clips/${clipId}`);
+                if (!response.ok) throw new Error('Failed to fetch clip');
+                const clip = await response.json();
+
+                document.getElementById('editClipId').value = clip.id;
+                document.getElementById('editClipGameId').value = clip.game_id;
+                document.getElementById('editClipVideoId').value = clip.video_id;
+                document.getElementById('editClipStartTime').value = clip.start_time;
+                document.getElementById('editClipEndTime').value = clip.end_time;
+                document.getElementById('editClipNotes').value = clip.notes || '';
+
+                editClipSelectedTags = [...clip.tags];
+                renderEditClipTags();
+
+                document.getElementById('editClipModal').style.display = 'block';
+            } catch (error) {
+                alert(`Error loading clip: ${error.message}`);
+            }
+        }
+
+        function closeEditClipModal() {
+            document.getElementById('editClipModal').style.display = 'none';
+            editClipSelectedTags = [];
+        }
+
+        function addEditClipTag() {
+            const input = document.getElementById('editClipTagInput');
+            const tag = input.value.trim();
+            if (tag && !editClipSelectedTags.includes(tag)) {
+                editClipSelectedTags.push(tag);
+                renderEditClipTags();
+                input.value = '';
+            }
+        }
+
+        function removeEditClipTag(tag) {
+            editClipSelectedTags = editClipSelectedTags.filter(t => t !== tag);
+            renderEditClipTags();
+        }
+
+        function renderEditClipTags() {
+            const tagList = document.getElementById('editClipTagList');
+            tagList.innerHTML = editClipSelectedTags.map(tag =>
+                `<div class="tag-item">
+                    <span>${tag}</span>
+                    <span class="tag-remove" onclick="removeEditClipTag('${tag}')">&times;</span>
+                </div>`
+            ).join('');
+        }
+
+        document.getElementById('editClipForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const clipId = document.getElementById('editClipId').value;
+            const gameId = document.getElementById('editClipGameId').value;
+            const videoId = document.getElementById('editClipVideoId').value;
+            const startTime = document.getElementById('editClipStartTime').value;
+            const endTime = document.getElementById('editClipEndTime').value;
+            const notes = document.getElementById('editClipNotes').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/clips/${clipId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        video_id: videoId,
+                        start_time: startTime,
+                        end_time: endTime,
+                        tags: editClipSelectedTags,
+                        notes: notes
+                    })
+                });
+
+                if (!response.ok) throw new Error('Update failed');
+
+                closeEditClipModal();
+
+                // Reload clips for current game
+                if (currentGameId) {
+                    loadGameClips(currentGameId);
+                }
+
+                alert('Clip updated successfully!');
+            } catch (error) {
+                alert(`Error updating clip: ${error.message}`);
+            }
+        });
+
+        // Video Management functions
+        let currentManageGameId = null;
+
+        async function manageVideos(gameId, gameName) {
+            currentManageGameId = gameId;
+            document.getElementById('manageVideosTitle').textContent = `Manage Videos - ${gameName}`;
+            document.getElementById('manageVideosModal').style.display = 'block';
+            await loadVideosForManagement(gameId);
+        }
+
+        function closeManageVideosModal() {
+            document.getElementById('manageVideosModal').style.display = 'none';
+            currentManageGameId = null;
+        }
+
+        async function loadVideosForManagement(gameId) {
+            try {
+                const response = await fetch(`${API_BASE}/games/${gameId}/videos`);
+                const videos = await response.json();
+
+                const videosList = document.getElementById('videosList');
+                if (videos.length === 0) {
+                    videosList.innerHTML = '<p>No videos uploaded for this game yet.</p>';
+                } else {
+                    videosList.innerHTML = videos.map(video => `
+                        <div class="clip-item" style="margin-bottom: 15px;">
+                            <div><strong>${video.filename}</strong></div>
+                            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                                Uploaded: ${new Date(video.uploaded_at).toLocaleString()}
+                            </div>
+                            <div class="clip-actions">
+                                <button class="btn-secondary" onclick="showEditVideoModal('${video.id}', '${video.filename.replace(/'/g, "\\'")}')">Rename</button>
+                                <button class="btn-danger" onclick="deleteVideo('${video.id}', '${video.filename.replace(/'/g, "\\'")}')">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('videosList').innerHTML = '<div class="error">Failed to load videos</div>';
+            }
+        }
+
+        function showEditVideoModal(videoId, filename) {
+            const newFilename = prompt('Enter new filename:', filename);
+            if (newFilename && newFilename !== filename) {
+                updateVideoFilename(videoId, newFilename);
+            }
+        }
+
+        async function updateVideoFilename(videoId, filename) {
+            const formData = new FormData();
+            formData.append('filename', filename);
+
+            try {
+                const response = await fetch(`${API_BASE}/videos/${videoId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Update failed');
+
+                if (currentManageGameId) {
+                    await loadVideosForManagement(currentManageGameId);
+                }
+                loadGames();
+                alert('Video renamed successfully!');
+            } catch (error) {
+                alert(`Error renaming video: ${error.message}`);
+            }
+        }
+
+        async function deleteVideo(videoId, filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"? This will also delete all clips made from this video.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/videos/${videoId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                if (currentManageGameId) {
+                    await loadVideosForManagement(currentManageGameId);
+                }
+                loadGames();
+                loadClips();
+                alert('Video deleted successfully!');
+            } catch (error) {
+                alert(`Error deleting video: ${error.message}`);
+            }
+        }
+
         function viewClip(clipId, startTime, endTime, tags, notes) {
             // Set video source
             const videoSource = document.getElementById('viewClipSource');
@@ -1166,15 +2094,289 @@
             document.getElementById('viewClipTags').innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
             document.getElementById('viewClipNotes').innerHTML = notes ? notes : '';
 
+            // Initialize custom video controls
+            initializeCustomVideoControls();
+
             // Show modal
             document.getElementById('viewClipModal').style.display = 'block';
+        }
+
+        function initializeCustomVideoControls() {
+            const video = document.getElementById('viewClipVideo');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const progressBar = document.getElementById('videoProgress');
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const durationDisplay = document.getElementById('duration');
+            const rewind5Btn = document.getElementById('rewind5');
+            const forward5Btn = document.getElementById('forward5');
+            const speedSelect = document.getElementById('playbackSpeed');
+
+            // Format time helper
+            function formatVideoTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            // Play/Pause
+            playPauseBtn.onclick = () => {
+                if (video.paused) {
+                    video.play();
+                    playPauseBtn.innerHTML = '⏸ Pause';
+                } else {
+                    video.pause();
+                    playPauseBtn.innerHTML = '▶ Play';
+                }
+            };
+
+            // Update time display and progress bar
+            video.ontimeupdate = () => {
+                if (!video.duration) return;
+                const progress = (video.currentTime / video.duration) * 100;
+                progressBar.value = progress;
+                currentTimeDisplay.textContent = formatVideoTime(video.currentTime);
+            };
+
+            // Set duration when metadata loads
+            video.onloadedmetadata = () => {
+                durationDisplay.textContent = formatVideoTime(video.duration);
+                progressBar.max = 100;
+            };
+
+            // Scrubbing
+            progressBar.oninput = () => {
+                const time = (progressBar.value / 100) * video.duration;
+                video.currentTime = time;
+            };
+
+            // Rewind/Forward
+            rewind5Btn.onclick = () => {
+                video.currentTime = Math.max(0, video.currentTime - 5);
+            };
+
+            forward5Btn.onclick = () => {
+                video.currentTime = Math.min(video.duration, video.currentTime + 5);
+            };
+
+            // Playback speed
+            speedSelect.onchange = () => {
+                video.playbackRate = parseFloat(speedSelect.value);
+            };
+
+            // Update button when video ends
+            video.onended = () => {
+                playPauseBtn.innerHTML = '▶ Play';
+            };
+
+            // Reset on pause/play
+            video.onplay = () => {
+                playPauseBtn.innerHTML = '⏸ Pause';
+            };
+
+            video.onpause = () => {
+                playPauseBtn.innerHTML = '▶ Play';
+            };
         }
 
         function closeViewClipModal() {
             const video = document.getElementById('viewClipVideo');
             video.pause();
             document.getElementById('viewClipModal').style.display = 'none';
+
+            // Disable coach mode when closing
+            if (coachModeActive) {
+                toggleCoachMode();
+            }
         }
+
+        // ===== COACH MODE FUNCTIONALITY =====
+        let coachModeActive = false;
+        let canvas, ctx;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentColor = '#e74c3c';
+        let currentSize = 4;
+        let isEraser = false;
+
+        function initializeCoachMode() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d', { willReadFrequently: false });
+
+            const video = document.getElementById('viewClipVideo');
+            const toggleBtn = document.getElementById('toggleCoachMode');
+            const penColorInput = document.getElementById('penColor');
+            const penSizeInput = document.getElementById('penSize');
+            const penSizeDisplay = document.getElementById('penSizeDisplay');
+            const eraserBtn = document.getElementById('eraserBtn');
+            const clearBtn = document.getElementById('clearCanvas');
+            const saveBtn = document.getElementById('saveDrawing');
+
+            // Resize canvas to match video
+            function resizeCanvas() {
+                const rect = video.getBoundingClientRect();
+                canvas.width = video.videoWidth || video.clientWidth;
+                canvas.height = video.videoHeight || video.clientHeight;
+                canvas.style.width = video.clientWidth + 'px';
+                canvas.style.height = video.clientHeight + 'px';
+            }
+
+            video.addEventListener('loadedmetadata', resizeCanvas);
+            window.addEventListener('resize', resizeCanvas);
+
+            // Toggle coach mode
+            toggleBtn.addEventListener('click', toggleCoachMode);
+
+            // Drawing event listeners
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointerout', stopDrawing);
+            canvas.addEventListener('pointercancel', stopDrawing);
+
+            // Tool controls
+            penColorInput.addEventListener('input', (e) => {
+                currentColor = e.target.value;
+                isEraser = false;
+                eraserBtn.classList.remove('active');
+            });
+
+            penSizeInput.addEventListener('input', (e) => {
+                currentSize = e.target.value;
+                penSizeDisplay.textContent = currentSize + 'px';
+            });
+
+            eraserBtn.addEventListener('click', () => {
+                isEraser = !isEraser;
+                eraserBtn.classList.toggle('active');
+            });
+
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Clear all drawings?')) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            });
+
+            saveBtn.addEventListener('click', saveDrawing);
+        }
+
+        function toggleCoachMode() {
+            coachModeActive = !coachModeActive;
+            const canvas = document.getElementById('drawingCanvas');
+            const tools = document.getElementById('coachModeTools');
+            const toggleBtn = document.getElementById('toggleCoachMode');
+            const video = document.getElementById('viewClipVideo');
+
+            if (coachModeActive) {
+                // Enable coach mode
+                canvas.style.display = 'block';
+                tools.style.display = 'block';
+                toggleBtn.textContent = '✓ Coach Mode Active';
+                toggleBtn.style.background = '#27ae60';
+
+                // Resize canvas to match video
+                const rect = video.getBoundingClientRect();
+                canvas.width = video.videoWidth || video.clientWidth;
+                canvas.height = video.videoHeight || video.clientHeight;
+                canvas.style.width = video.clientWidth + 'px';
+                canvas.style.height = video.clientHeight + 'px';
+            } else {
+                // Disable coach mode
+                canvas.style.display = 'none';
+                tools.style.display = 'none';
+                toggleBtn.textContent = '🏀 Coach Mode';
+                toggleBtn.style.background = '#3498db';
+            }
+        }
+
+        function getCanvasCoordinates(e) {
+            const canvas = document.getElementById('drawingCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCanvasCoordinates(e);
+            lastX = coords.x;
+            lastY = coords.y;
+
+            // Prevent default to avoid scrolling on touch devices
+            e.preventDefault();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            e.preventDefault();
+
+            const coords = getCanvasCoordinates(e);
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(coords.x, coords.y);
+
+            if (isEraser) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = currentSize * 3;
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+            }
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            lastX = coords.x;
+            lastY = coords.y;
+        }
+
+        function stopDrawing(e) {
+            if (isDrawing) {
+                isDrawing = false;
+            }
+        }
+
+        function saveDrawing() {
+            const canvas = document.getElementById('drawingCanvas');
+            const video = document.getElementById('viewClipVideo');
+
+            // Create a composite canvas with video frame + drawings
+            const compositeCanvas = document.createElement('canvas');
+            compositeCanvas.width = canvas.width;
+            compositeCanvas.height = canvas.height;
+            const compositeCtx = compositeCanvas.getContext('2d');
+
+            // Draw video frame
+            compositeCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Draw annotations on top
+            compositeCtx.drawImage(canvas, 0, 0);
+
+            // Download
+            compositeCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `coach-markup-${Date.now()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Initialize coach mode when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait a bit for the modal to be in the DOM
+            setTimeout(initializeCoachMode, 100);
+        });
 
         function updateTagSuggestions() {
             const datalist = document.getElementById('tagSuggestions');
@@ -1233,8 +2435,10 @@
 
         // Auto-refresh clips every 10 seconds to update status
         setInterval(() => {
-            const filterGame = document.getElementById('filterGame').value;
-            loadClips(filterGame);
+            // Only refresh if we're in game detail view
+            if (currentGameId && document.getElementById('gameDetailView').style.display !== 'none') {
+                loadGameClips(currentGameId);
+            }
         }, 10000);
     </script>
 </body>

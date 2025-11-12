@@ -387,6 +387,95 @@ async def list_game_videos(game_id: str):
         for row in rows
     ]
 
+@app.get("/videos/{video_id}", response_model=Video)
+async def get_video(video_id: str):
+    """Get a specific video"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM videos WHERE id = $1",
+            uuid.UUID(video_id)
+        )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "filename": row["filename"],
+        "video_path": row["video_path"],
+        "uploaded_at": row["uploaded_at"]
+    }
+
+@app.put("/videos/{video_id}", response_model=Video)
+async def update_video(
+    video_id: str,
+    filename: str = Form(...)
+):
+    """Update video metadata (filename only)"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE videos
+            SET filename = $1
+            WHERE id = $2
+            RETURNING id, game_id, filename, video_path, uploaded_at
+            """,
+            filename, uuid.UUID(video_id)
+        )
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "filename": row["filename"],
+        "video_path": row["video_path"],
+        "uploaded_at": row["uploaded_at"]
+    }
+
+@app.delete("/videos/{video_id}")
+async def delete_video(video_id: str):
+    """Delete a video and all associated clips"""
+    async with db_pool.acquire() as conn:
+        # Get video path
+        video = await conn.fetchrow(
+            "SELECT video_path FROM videos WHERE id = $1",
+            uuid.UUID(video_id)
+        )
+
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        # Get all clip paths to delete from MinIO
+        clips = await conn.fetch(
+            "SELECT clip_path FROM clips WHERE video_id = $1",
+            uuid.UUID(video_id)
+        )
+
+        # Delete the video (cascades to clips in DB)
+        await conn.execute(
+            "DELETE FROM videos WHERE id = $1",
+            uuid.UUID(video_id)
+        )
+
+    # Delete files from MinIO
+    minio_client = get_minio_client()
+    try:
+        minio_client.remove_object(BUCKET_NAME, video["video_path"])
+    except S3Error:
+        pass
+
+    for clip in clips:
+        if clip["clip_path"]:
+            try:
+                minio_client.remove_object(BUCKET_NAME, clip["clip_path"])
+            except S3Error:
+                pass
+
+    return {"message": "Video deleted successfully"}
+
 @app.get("/games", response_model=List[Game])
 async def list_games():
     """List all games"""
@@ -435,6 +524,88 @@ async def get_game(game_id: str):
         "created_at": row["created_at"],
         "video_count": row["video_count"]
     }
+
+@app.put("/games/{game_id}", response_model=Game)
+async def update_game(
+    game_id: str,
+    name: str = Form(...),
+    date: str = Form(...)
+):
+    """Update a game"""
+    try:
+        game_date = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE games
+            SET name = $1, date = $2
+            WHERE id = $3
+            RETURNING id, name, date, created_at
+            """,
+            name, game_date, uuid.UUID(game_id)
+        )
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Game not found")
+
+        # Get video count
+        video_count = await conn.fetchval(
+            "SELECT COUNT(*) FROM videos WHERE game_id = $1",
+            uuid.UUID(game_id)
+        )
+
+    return {
+        "id": str(row["id"]),
+        "name": row["name"],
+        "date": row["date"],
+        "created_at": row["created_at"],
+        "video_count": video_count
+    }
+
+@app.delete("/games/{game_id}")
+async def delete_game(game_id: str):
+    """Delete a game and all associated videos and clips"""
+    async with db_pool.acquire() as conn:
+        # Get all video paths to delete from MinIO
+        videos = await conn.fetch(
+            "SELECT video_path FROM videos WHERE game_id = $1",
+            uuid.UUID(game_id)
+        )
+
+        # Get all clip paths to delete from MinIO
+        clips = await conn.fetch(
+            "SELECT clip_path FROM clips WHERE game_id = $1",
+            uuid.UUID(game_id)
+        )
+
+        # Delete the game (cascades to videos and clips in DB)
+        result = await conn.execute(
+            "DELETE FROM games WHERE id = $1",
+            uuid.UUID(game_id)
+        )
+
+        if result == "DELETE 0":
+            raise HTTPException(status_code=404, detail="Game not found")
+
+    # Delete files from MinIO
+    minio_client = get_minio_client()
+    for video in videos:
+        try:
+            minio_client.remove_object(BUCKET_NAME, video["video_path"])
+        except S3Error:
+            pass
+
+    for clip in clips:
+        if clip["clip_path"]:
+            try:
+                minio_client.remove_object(BUCKET_NAME, clip["clip_path"])
+            except S3Error:
+                pass
+
+    return {"message": "Game deleted successfully"}
 
 @app.get("/games/{game_id}/video")
 async def stream_game_video(game_id: str):
@@ -541,20 +712,20 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
     """List clips with optional filters"""
     query = "SELECT * FROM clips WHERE 1=1"
     params = []
-    
+
     if game_id:
         params.append(uuid.UUID(game_id))
         query += f" AND game_id = ${len(params)}"
-    
+
     if tag:
         params.append([tag])
         query += f" AND tags && ${len(params)}"
-    
+
     query += " ORDER BY created_at DESC"
-    
+
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(query, *params)
-    
+
     return [
         {
             "id": str(row["id"]),
@@ -570,6 +741,61 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
         }
         for row in rows
     ]
+
+@app.get("/clips/{clip_id}", response_model=Clip)
+async def get_clip(clip_id: str):
+    """Get a specific clip"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Clip not found")
+
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "video_id": str(row["video_id"]),
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+        "tags": row["tags"],
+        "notes": row["notes"],
+        "clip_path": row["clip_path"],
+        "status": row["status"],
+        "created_at": row["created_at"]
+    }
+
+@app.put("/clips/{clip_id}", response_model=Clip)
+async def update_clip(clip_id: str, clip: ClipCreate):
+    """Update clip metadata (tags, notes, timestamps)"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE clips
+            SET start_time = $1, end_time = $2, tags = $3, notes = $4
+            WHERE id = $5
+            RETURNING id, game_id, video_id, start_time, end_time, tags, notes, clip_path, status, created_at
+            """,
+            clip.start_time, clip.end_time, clip.tags, clip.notes, uuid.UUID(clip_id)
+        )
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Clip not found")
+
+    return {
+        "id": str(row["id"]),
+        "game_id": str(row["game_id"]),
+        "video_id": str(row["video_id"]),
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+        "tags": row["tags"],
+        "notes": row["notes"],
+        "clip_path": row["clip_path"],
+        "status": row["status"],
+        "created_at": row["created_at"]
+    }
 
 @app.get("/clips/{clip_id}/stream")
 async def stream_clip(clip_id: str, request: Request):
