@@ -6,7 +6,7 @@ from typing import List, Optional
 import os
 import subprocess
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 import asyncpg
 from minio import Minio
 from minio.error import S3Error
@@ -210,6 +210,12 @@ async def create_game(
     video: UploadFile = File(...)
 ):
     """Upload a game video"""
+    # Parse date string to date object
+    try:
+        game_date = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+
     game_id = str(uuid.uuid4())
     video_path = f"games/{game_id}/{video.filename}"
     
@@ -234,7 +240,7 @@ async def create_game(
             VALUES ($1, $2, $3, $4)
             RETURNING id, name, date, video_path, created_at
             """,
-            uuid.UUID(game_id), name, date, video_path
+            uuid.UUID(game_id), name, game_date, video_path
         )
     
     return {
