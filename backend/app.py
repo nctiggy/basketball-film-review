@@ -103,7 +103,7 @@ class ClipCreate(BaseModel):
 class Game(BaseModel):
     id: str
     name: str
-    date: str
+    date: date
     video_path: str
     created_at: datetime
 
