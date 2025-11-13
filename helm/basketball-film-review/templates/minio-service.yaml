@@ -1,0 +1,23 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio
+spec:
+  type: {{ .Values.minio.service.type }}
+  ports:
+  - port: {{ .Values.minio.service.apiPort }}
+    targetPort: 9000
+    protocol: TCP
+    name: api
+  - port: {{ .Values.minio.service.consolePort }}
+    targetPort: 9001
+    protocol: TCP
+    name: console
+  selector:
+    app: minio
+{{- end }}

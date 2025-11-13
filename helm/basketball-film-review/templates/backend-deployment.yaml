@@ -1,0 +1,77 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z postgres 5432; do
+            echo "Waiting for PostgreSQL...";
+            sleep 2;
+          done
+      - name: wait-for-minio
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          until nc -z minio 9000; do
+            echo "Waiting for MinIO...";
+            sleep 2;
+          done
+      containers:
+      - name: backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          value: {{ .Values.backend.env.DATABASE_URL }}
+        - name: MINIO_ENDPOINT
+          value: {{ .Values.backend.env.MINIO_ENDPOINT }}
+        - name: MINIO_EXTERNAL_ENDPOINT
+          value: {{ .Values.backend.env.MINIO_EXTERNAL_ENDPOINT }}
+        - name: MINIO_ACCESS_KEY
+          value: {{ .Values.backend.env.MINIO_ACCESS_KEY }}
+        - name: MINIO_SECRET_KEY
+          value: {{ .Values.backend.env.MINIO_SECRET_KEY }}
+        - name: MINIO_SECURE
+          value: {{ .Values.backend.env.MINIO_SECURE | quote }}
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /games
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /games
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+{{- end }}

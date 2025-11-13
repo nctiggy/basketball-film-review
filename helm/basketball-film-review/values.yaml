@@ -1,0 +1,106 @@
+# Default values for basketball-film-review
+
+# Global settings
+replicaCount: 1
+namespace: basketball-film-review
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  host: basketball.craigcloud.io
+  tls:
+    enabled: false
+    secretName: basketball-tls
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "15"
+    pullPolicy: IfNotPresent
+  auth:
+    username: filmreview
+    password: filmreview
+    database: filmreview
+  persistence:
+    enabled: true
+    storageClass: px-csi-db
+    size: 10Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# MinIO configuration
+minio:
+  enabled: true
+  image:
+    repository: minio/minio
+    tag: latest
+    pullPolicy: IfNotPresent
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin
+  persistence:
+    enabled: true
+    storageClass: px-csi-replicated
+    size: 50Gi
+  service:
+    type: ClusterIP
+    apiPort: 9000
+    consolePort: 9001
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+# Backend configuration
+backend:
+  enabled: true
+  image:
+    repository: docker-registry.docker-registry.svc.cluster.local:5000/basketball-film-review-backend
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    DATABASE_URL: "postgresql://filmreview:filmreview@postgres:5432/filmreview"
+    MINIO_ENDPOINT: "minio:9000"
+    MINIO_EXTERNAL_ENDPOINT: "minio.craigcloud.io"
+    MINIO_ACCESS_KEY: "minioadmin"
+    MINIO_SECRET_KEY: "minioadmin"
+    MINIO_SECURE: "false"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# Frontend configuration
+frontend:
+  enabled: true
+  image:
+    repository: docker-registry.docker-registry.svc.cluster.local:5000/basketball-film-review-frontend
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
