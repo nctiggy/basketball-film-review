@@ -60,3 +60,7 @@ values-custom.yaml
 # Environment files
 .env
 .env.local
+
+# Kubernetes configs (sensitive credentials)
+*.kubeconfig
+admin.*.kubeconfig
