@@ -6,7 +6,7 @@ backend:
 
   image:
     repository: nctiggy/basketball-film-review-backend
-    tag: 1.0.1
+    tag: 1.0.2
     pullPolicy: IfNotPresent
   
   service:
@@ -39,7 +39,7 @@ frontend:
 
   image:
     repository: nctiggy/basketball-film-review-frontend
-    tag: 1.0.1
+    tag: 1.0.2
     pullPolicy: IfNotPresent
   
   service:
