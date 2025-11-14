@@ -790,6 +790,20 @@
                             <span id="duration">0:00</span>
                         </div>
                     </div>
+
+                    <!-- Play/Pause Button -->
+                    <div style="margin-top: 12px;">
+                        <button id="playPauseBtn" style="width: 100%; background: #3498db; color: white; border: none; border-radius: 4px; padding: 16px; cursor: pointer; font-size: 18px; font-weight: 600;">
+                            ▶ Play
+                        </button>
+                    </div>
+
+                    <!-- Clip Info -->
+                    <div id="viewClipInfo" style="padding: 12px; background: #f8f9fa; border-radius: 4px; margin-top: 12px;">
+                        <div class="clip-times" id="viewClipTimes" style="margin-bottom: 8px;"></div>
+                        <div class="tags" id="viewClipTags" style="margin-bottom: 8px;"></div>
+                        <div id="viewClipNotes" style="color: #666; font-size: 13px;"></div>
+                    </div>
                 </div>
 
                 <!-- Controls Sidebar -->
@@ -801,10 +815,6 @@
 
                     <!-- Custom Video Controls -->
                     <div id="customVideoControls" style="display: flex; flex-direction: column; gap: 6px;">
-                        <button id="playPauseBtn" style="width: 100%; background: #3498db; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                            ▶ Play
-                        </button>
-
                         <button id="rewind5" style="width: 100%; background: #34495e; color: white; border: none; border-radius: 4px; padding: 6px; cursor: pointer; font-size: 11px;">
                             ⏪ 5s
                         </button>
@@ -835,15 +845,7 @@
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <button id="eraserBtn" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">Eraser</button>
                             <button id="clearCanvas" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">Clear All</button>
-                            <button id="saveDrawing" class="btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;">💾 Save Drawing</button>
                         </div>
-                    </div>
-
-                    <!-- Clip Info -->
-                    <div id="viewClipInfo" style="padding: 12px; background: #f8f9fa; border-radius: 4px;">
-                        <div class="clip-times" id="viewClipTimes" style="margin-bottom: 8px;"></div>
-                        <div class="tags" id="viewClipTags" style="margin-bottom: 8px;"></div>
-                        <div id="viewClipNotes" style="color: #666; font-size: 13px;"></div>
                     </div>
                 </div>
             </div>
@@ -1562,9 +1564,9 @@
                             <tbody>
                                 ${clips.map(clip => `
                                     <tr>
-                                        <td><strong>${clip.start_time} → ${clip.end_time}</strong></td>
-                                        <td>${clip.tags.map(tag => `<span class="tag clickable" onclick="filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join(' ')}</td>
-                                        <td>${clip.notes || '-'}</td>
+                                        <td onclick="${clip.status === 'completed' ? `viewClipInline('${clip.id}')` : ''}" style="${clip.status === 'completed' ? 'cursor: pointer;' : ''}"><strong>${clip.start_time} → ${clip.end_time}</strong></td>
+                                        <td>${clip.tags.map(tag => `<span class="tag clickable" onclick="event.stopPropagation(); filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join(' ')}</td>
+                                        <td onclick="${clip.status === 'completed' ? `viewClipInline('${clip.id}')` : ''}" style="${clip.status === 'completed' ? 'cursor: pointer;' : ''}">${clip.notes || '-'}</td>
                                         <td><span class="status status-${clip.status}">${clip.status.toUpperCase()}</span></td>
                                         <td class="actions-cell">
                                             ${clip.status === 'completed' ?
@@ -2210,7 +2212,6 @@
             const penSizeDisplay = document.getElementById('penSizeDisplay');
             const eraserBtn = document.getElementById('eraserBtn');
             const clearBtn = document.getElementById('clearCanvas');
-            const saveBtn = document.getElementById('saveDrawing');
 
             // Resize canvas to match video
             function resizeCanvas() {
@@ -2254,8 +2255,6 @@
             clearBtn.addEventListener('click', () => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             });
-
-            saveBtn.addEventListener('click', saveDrawing);
         }
 
         function toggleCoachMode() {
@@ -2341,33 +2340,6 @@
             if (isDrawing) {
                 isDrawing = false;
             }
-        }
-
-        function saveDrawing() {
-            const canvas = document.getElementById('drawingCanvas');
-            const video = document.getElementById('viewClipVideo');
-
-            // Create a composite canvas with video frame + drawings
-            const compositeCanvas = document.createElement('canvas');
-            compositeCanvas.width = canvas.width;
-            compositeCanvas.height = canvas.height;
-            const compositeCtx = compositeCanvas.getContext('2d');
-
-            // Draw video frame
-            compositeCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Draw annotations on top
-            compositeCtx.drawImage(canvas, 0, 0);
-
-            // Download
-            compositeCanvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `coach-markup-${Date.now()}.png`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
         }
 
         // Initialize coach mode when DOM is ready
