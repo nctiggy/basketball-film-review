@@ -64,3 +64,20 @@ values-custom.yaml
 # Kubernetes configs (sensitive credentials)
 *.kubeconfig
 admin.*.kubeconfig
+
+# 1Password credentials (sensitive)
+1password-credentials.json
+1password-connect-output.json
+1password-connect-server.json
+
+# Cloudflared credentials (sensitive)
+.cloudflared/
+
+# Setup documentation and scripts with secrets
+CLOUDFLARE-ACCESS-SETUP.md
+SETUP-CLOUDFLARE-1PASSWORD.md
+scripts/complete-setup.sh
+scripts/create-1password-connect-server.sh
+scripts/create-cloudflare-tunnel.sh
+scripts/deploy-to-kubernetes.sh
+scripts/setup-1password-secrets.sh

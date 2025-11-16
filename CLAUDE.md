@@ -2,6 +2,75 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: After Making Changes Checklist
+
+**EVERY TIME** you make changes to backend or frontend code, you MUST follow these steps IN ORDER:
+
+### 1. Update Version Footer (if frontend changes)
+If you modified `frontend/index.html`, update the version in the footer:
+- Find the footer version number (search for "Version")
+- Increment using semantic versioning: MAJOR.MINOR.PATCH
+  - MAJOR: Breaking changes or major new features
+  - MINOR: New features, significant UI changes
+  - PATCH: Bug fixes, small tweaks
+
+### 2. Build Images with Buildx for AMD64
+**ALWAYS use `docker buildx` with `--platform linux/amd64`** - the cluster runs AMD64 nodes!
+
+```bash
+# Set version (use same version from footer)
+export IMAGE_REGISTRY="nctiggy"
+export IMAGE_TAG="1.0.X"  # INCREMENT THIS!
+
+# Backend (if changed)
+docker buildx build --platform linux/amd64 \
+  -t ${IMAGE_REGISTRY}/basketball-film-review-backend:${IMAGE_TAG} \
+  -f backend/Dockerfile backend/ --push
+
+# Frontend (if changed)
+docker buildx build --platform linux/amd64 \
+  -t ${IMAGE_REGISTRY}/basketball-film-review-frontend:${IMAGE_TAG} \
+  -f frontend/Dockerfile frontend/ --push
+```
+
+### 3. Update Helm Values
+Edit `helm/values.yaml` and update the image tags:
+```yaml
+backend:
+  image:
+    tag: 1.0.X  # Update to match IMAGE_TAG
+
+frontend:
+  image:
+    tag: 1.0.X  # Update to match IMAGE_TAG
+```
+
+### 4. Deploy to Kubernetes
+```bash
+export KUBECONFIG=admin.app-eng.kubeconfig
+helm upgrade basketball-film-review ./helm --namespace film-review
+kubectl rollout status deployment/basketball-film-review-backend -n film-review
+kubectl rollout status deployment/basketball-film-review-frontend -n film-review
+```
+
+### 5. Commit Changes to Git
+**ALWAYS commit after successful deployment**:
+```bash
+git add .
+git commit -m "Descriptive message about what changed
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+git push
+```
+
+**DO NOT SKIP THESE STEPS!** The user expects:
+- ✅ Buildx for AMD64 (not native ARM builds)
+- ✅ Version increments in footer
+- ✅ Git commits after changes
+- ✅ Helm values updated with new image tags
+
 ## Project Overview
 
 Basketball Film Review is a web application for coaches to upload game videos, create timestamped clips, and organize them with tags for film study sessions. The system processes video clips asynchronously using ffmpeg and stores everything in MinIO object storage.

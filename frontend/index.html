@@ -5,6 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basketball Film Review</title>
     <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #f5f5f5;
+            --bg-secondary: white;
+            --bg-tertiary: #fafafa;
+            --bg-hover: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e0e0e0;
+            --border-light: #ddd;
+            --border-dark: #ccc;
+            --header-bg: #2c3e50;
+            --header-text: white;
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-md: rgba(0, 0, 0, 0.15);
+            --input-bg: white;
+            --disabled-bg: #bdc3c7;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark mode colors */
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --bg-tertiary: #363636;
+                --bg-hover: #404040;
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --text-tertiary: #909090;
+                --border-color: #404040;
+                --border-light: #4a4a4a;
+                --border-dark: #555;
+                --header-bg: #1a1a1a;
+                --header-text: #e0e0e0;
+                --modal-overlay: rgba(0, 0, 0, 0.8);
+                --shadow: rgba(0, 0, 0, 0.3);
+                --shadow-md: rgba(0, 0, 0, 0.4);
+                --input-bg: #363636;
+                --disabled-bg: #4a4a4a;
+            }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +57,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         .container {
@@ -24,8 +68,8 @@
         }
 
         header {
-            background: #2c3e50;
-            color: white;
+            background: var(--header-bg);
+            color: var(--header-text);
             padding: 20px 0;
             margin-bottom: 30px;
         }
@@ -36,16 +80,16 @@
         }
 
         .section {
-            background: white;
+            background: var(--bg-secondary);
             padding: 25px;
             margin-bottom: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow);
         }
 
         h2 {
             margin-bottom: 20px;
-            color: #2c3e50;
+            color: var(--text-primary);
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
@@ -58,7 +102,7 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #555;
+            color: var(--text-secondary);
         }
 
         input[type="text"],
@@ -68,9 +112,11 @@
         select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-light);
             border-radius: 4px;
             font-size: 14px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
 
         textarea {
@@ -95,25 +141,175 @@
         }
 
         button:disabled {
-            background: #bdc3c7;
+            background: var(--disabled-bg);
             cursor: not-allowed;
         }
 
-        .game-list, .clip-list {
+        .game-list {
             display: grid;
             gap: 15px;
         }
 
-        .game-item, .clip-item {
+        .game-item {
             padding: 15px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            background: #fafafa;
+            background: var(--bg-tertiary);
+            position: relative;
         }
 
-        .game-item:hover, .clip-item:hover {
+        .game-item:hover {
             border-color: #3498db;
-            background: #f8f9fa;
+            background: var(--bg-hover);
+        }
+
+        /* Clips table styles */
+        .clips-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .clips-table thead {
+            background: var(--bg-tertiary);
+        }
+
+        .clips-table th {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .clips-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .clips-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .clips-table .status-cell {
+            width: 30px;
+            text-align: center;
+        }
+
+        .clips-table .times-cell {
+            width: 180px;
+            font-weight: 500;
+        }
+
+        .clips-table .players-cell {
+            width: 200px;
+            color: #3498db;
+        }
+
+        .clips-table .tags-cell {
+            width: auto;
+        }
+
+        .clips-table .actions-cell {
+            width: 50px;
+            text-align: center;
+        }
+
+        .clip-status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .clip-status-indicator.completed {
+            background-color: #27ae60;
+        }
+
+        .clip-status-indicator.processing {
+            background-color: #f39c12;
+        }
+
+        .clip-status-indicator.pending {
+            background-color: #f39c12;
+        }
+
+        .clip-status-indicator.failed {
+            background-color: #e74c3c;
+        }
+
+        .clip-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .clip-menu-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: var(--text-tertiary);
+            line-height: 1;
+        }
+
+        .clip-menu-button:hover {
+            color: var(--text-primary);
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .clip-menu-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 2px 8px var(--shadow-md);
+            min-width: 150px;
+            z-index: 1000;
+            margin-top: 4px;
+        }
+
+        .clip-menu-dropdown.show {
+            display: block;
+        }
+
+        .clip-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .clip-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .clip-menu-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .clip-menu-item.danger {
+            color: #e74c3c;
+        }
+
+        .clip-menu-item.danger:hover {
+            background: #fee;
+        }
+
+        .clip-menu-item:disabled,
+        .clip-menu-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .clip-menu-item.disabled:hover {
+            background: var(--bg-secondary);
         }
 
         .game-header {
@@ -126,11 +322,11 @@
         .game-title {
             font-size: 1.2em;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
 
         .game-date {
-            color: #7f8c8d;
+            color: var(--text-secondary);
             font-size: 0.9em;
         }
 
@@ -295,12 +491,12 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: var(--modal-overlay);
             overflow: auto;
         }
 
         .modal-content {
-            background-color: #fff;
+            background-color: var(--bg-secondary);
             margin: 2% auto;
             padding: 30px;
             border-radius: 8px;
@@ -321,7 +517,7 @@
         }
 
         .modal-close {
-            color: #aaa;
+            color: var(--text-secondary);
             font-size: 32px;
             font-weight: bold;
             cursor: pointer;
@@ -756,6 +952,15 @@
                             <div id="modalTagList" class="tag-list"></div>
                         </div>
                         <div class="form-group">
+                            <label for="modalPlayerInput">Players:</label>
+                            <div>
+                                <input type="text" id="modalPlayerInput" list="playerSuggestions" placeholder="Add player name (e.g., John Smith)">
+                                <datalist id="playerSuggestions"></datalist>
+                                <button type="button" id="modalAddPlayerBtn">Add Player</button>
+                            </div>
+                            <div id="modalPlayerList" class="tag-list"></div>
+                        </div>
+                        <div class="form-group">
                             <label for="modalNotes">Notes (optional):</label>
                             <textarea id="modalNotes" placeholder="Add any notes about this play..."></textarea>
                         </div>
@@ -801,6 +1006,7 @@
                     <!-- Clip Info -->
                     <div id="viewClipInfo" style="padding: 12px; background: #f8f9fa; border-radius: 4px; margin-top: 12px;">
                         <div class="clip-times" id="viewClipTimes" style="margin-bottom: 8px;"></div>
+                        <div id="viewClipPlayers" style="margin-bottom: 8px; color: #3498db;"></div>
                         <div class="tags" id="viewClipTags" style="margin-bottom: 8px;"></div>
                         <div id="viewClipNotes" style="color: #666; font-size: 13px;"></div>
                     </div>
@@ -882,6 +1088,16 @@
                 <span class="modal-close" onclick="closeUploadVideoModal()">&times;</span>
             </div>
             <div id="uploadVideoMessage"></div>
+            <div id="uploadProgress" style="display: none; margin-bottom: 20px;">
+                <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="uploadStatus">Uploading...</span>
+                    <span id="uploadPercentage" style="font-weight: bold; color: #4CAF50;">0%</span>
+                </div>
+                <div style="width: 100%; background-color: #e0e0e0; border-radius: 10px; overflow: hidden; height: 20px;">
+                    <div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #4CAF50; transition: width 0.3s ease;"></div>
+                </div>
+                <div id="uploadSpeed" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+            </div>
             <form id="uploadVideoForm">
                 <div class="form-group">
                     <label for="gameVideo">Video File:</label>
@@ -961,14 +1177,16 @@
         </div>
     </div>
 
-    <footer style="text-align: center; padding: 20px; color: #666; font-size: 13px; border-top: 1px solid #e0e0e0; margin-top: 40px;">
-        <p>Basketball Film Review v1.0.2</p>
+    <footer style="text-align: center; padding: 20px; color: var(--text-tertiary); font-size: 13px; border-top: 1px solid var(--border-color); margin-top: 40px;">
+        <p>Basketball Film Review v1.0.8</p>
     </footer>
 
     <script>
         const API_BASE = '/api';
+        let DIRECT_API_BASE = null; // Will be set if local network detected
         let selectedTags = [];
         let modalSelectedTags = [];
+        let modalSelectedPlayers = [];
         let clipStartTime = null;
         let clipEndTime = null;
         let currentGameId = null;
@@ -976,11 +1194,56 @@
         let currentGameData = null;
         let allTags = new Set();
         let tagFrequency = {};
+        let allPlayers = [];
         let currentClipFilter = '';
         let currentClipSort = 'newest';
 
+        // Detect if we're on local network and can access backend directly
+        async function detectLocalNetwork() {
+            // Skip local network detection if page loaded over HTTPS
+            // (browsers block mixed content - HTTPS page can't fetch HTTP)
+            if (window.location.protocol === 'https:') {
+                console.log('🌐 Page loaded over HTTPS - using Cloudflare tunnel for compatibility');
+                console.log('💡 To use local network: access via http://172.18.0.51 (if on local network)');
+                return;
+            }
+
+            // Try to access backend LoadBalancer service directly
+            // This will work when accessing the app via http:// on local network
+            const localEndpoints = [
+                'http://172.18.0.51:8000',  // Backend LoadBalancer IP
+            ];
+
+            for (const endpoint of localEndpoints) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
+                    const response = await fetch(`${endpoint}/health`, {
+                        method: 'GET',
+                        signal: controller.signal,
+                        mode: 'cors'
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        console.log('✅ Local network detected! Using direct backend:', endpoint);
+                        DIRECT_API_BASE = endpoint;
+                        return;
+                    }
+                } catch (error) {
+                    // Expected to fail if not on local network or endpoint not accessible
+                    console.log('❌ Local endpoint not accessible:', endpoint);
+                }
+            }
+
+            console.log('🌐 Using Cloudflare tunnel (remote access)');
+        }
+
         // Load games on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await detectLocalNetwork();
             loadGamesTable();
             setupEventListeners();
         });
@@ -1023,6 +1286,15 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     addModalTag();
+                }
+            });
+
+            // Modal player management
+            document.getElementById('modalAddPlayerBtn').addEventListener('click', addModalPlayer);
+            document.getElementById('modalPlayerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addModalPlayer();
                 }
             });
 
@@ -1098,6 +1370,38 @@
                 </div>
             `).join('');
             updateQuickTagStyles();
+        }
+
+        function addModalPlayer() {
+            const input = document.getElementById('modalPlayerInput');
+            const player = input.value.trim();
+
+            if (player && !modalSelectedPlayers.includes(player)) {
+                modalSelectedPlayers.push(player);
+                renderModalPlayers();
+                input.value = '';
+                updateCreateClipButton();
+            }
+        }
+
+        function removeModalPlayer(player) {
+            modalSelectedPlayers = modalSelectedPlayers.filter(p => p !== player);
+            renderModalPlayers();
+            updateCreateClipButton();
+        }
+
+        function renderModalPlayers() {
+            const playerList = document.getElementById('modalPlayerList');
+            playerList.innerHTML = modalSelectedPlayers.map(player => `
+                <div class="tag-item">
+                    <span>${player}</span>
+                    <span class="tag-remove" onclick="removeModalPlayer('${escapeHtml(player)}')">&times;</span>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'");
         }
 
         // Modal functions
@@ -1243,6 +1547,7 @@
                 start_time: formatTime(clipStartTime),
                 end_time: formatTime(clipEndTime),
                 tags: modalSelectedTags,
+                players: modalSelectedPlayers,
                 notes: document.getElementById('modalNotes').value
             };
 
@@ -1284,11 +1589,14 @@
             document.getElementById('markEndBtn').disabled = true;
             document.getElementById('createClipBtn').disabled = true;
 
-            // Reset tags and notes
+            // Reset tags, players, and notes
             modalSelectedTags = [];
             renderModalTags();
+            modalSelectedPlayers = [];
+            renderModalPlayers();
             document.getElementById('modalNotes').value = '';
             document.getElementById('modalTagInput').value = '';
+            document.getElementById('modalPlayerInput').value = '';
         }
 
         function showModalSuccessMessage(message) {
@@ -1367,26 +1675,89 @@
             const form = e.target;
             const submitBtn = form.querySelector('button[type="submit"]');
             const messageDiv = document.getElementById('uploadVideoMessage');
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const percentageSpan = document.getElementById('uploadPercentage');
+            const statusSpan = document.getElementById('uploadStatus');
+            const speedSpan = document.getElementById('uploadSpeed');
 
             if (!currentGameId) {
                 messageDiv.innerHTML = '<div class="error">No game selected</div>';
                 return;
             }
 
+            const file = document.getElementById('gameVideo').files[0];
+            if (!file) {
+                messageDiv.innerHTML = '<div class="error">Please select a file</div>';
+                return;
+            }
+
             submitBtn.disabled = true;
-            messageDiv.innerHTML = '<div class="loading">Uploading video... This may take a while.</div>';
+            messageDiv.innerHTML = '';
+            progressDiv.style.display = 'block';
+            progressBar.style.width = '0%';
+            percentageSpan.textContent = '0%';
+
+            // Determine which endpoint to use
+            const uploadEndpoint = DIRECT_API_BASE || API_BASE;
+            const networkType = DIRECT_API_BASE ? 'Local Network (Fast)' : 'Remote (via Cloudflare)';
+            statusSpan.textContent = `Uploading via ${networkType}...`;
 
             const formData = new FormData();
-            formData.append('video', document.getElementById('gameVideo').files[0]);
+            formData.append('video', file);
+
+            // Track upload progress
+            const startTime = Date.now();
+            let lastLoaded = 0;
+            let lastTime = startTime;
 
             try {
-                const response = await fetch(`${API_BASE}/games/${currentGameId}/videos`, {
-                    method: 'POST',
-                    body: formData
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+
+                    // Track upload progress
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const percentage = Math.round((e.loaded / e.total) * 100);
+                            progressBar.style.width = percentage + '%';
+                            percentageSpan.textContent = percentage + '%';
+
+                            // Calculate upload speed
+                            const currentTime = Date.now();
+                            const timeDiff = (currentTime - lastTime) / 1000; // seconds
+                            const loadedDiff = e.loaded - lastLoaded;
+
+                            if (timeDiff > 0.5) { // Update speed every 0.5 seconds
+                                const speed = loadedDiff / timeDiff; // bytes per second
+                                const speedMB = (speed / (1024 * 1024)).toFixed(2);
+                                const remainingBytes = e.total - e.loaded;
+                                const remainingTime = Math.round(remainingBytes / speed);
+
+                                speedSpan.textContent = `${speedMB} MB/s - ${formatUploadTime(remainingTime)} remaining`;
+
+                                lastLoaded = e.loaded;
+                                lastTime = currentTime;
+                            }
+                        }
+                    });
+
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.response);
+                        } else {
+                            reject(new Error('Upload failed'));
+                        }
+                    });
+
+                    xhr.addEventListener('error', () => reject(new Error('Network error')));
+                    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+                    xhr.open('POST', `${uploadEndpoint}/games/${currentGameId}/videos`);
+                    xhr.send(formData);
                 });
 
-                if (!response.ok) throw new Error('Upload failed');
-
+                // Success
+                progressDiv.style.display = 'none';
                 messageDiv.innerHTML = '<div class="success">Video uploaded successfully!</div>';
                 form.reset();
 
@@ -1395,10 +1766,18 @@
                     loadGameVideos(currentGameId);
                 }, 1000);
             } catch (error) {
+                progressDiv.style.display = 'none';
                 messageDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             } finally {
                 submitBtn.disabled = false;
             }
+        }
+
+        function formatUploadTime(seconds) {
+            if (seconds < 60) return `${Math.floor(seconds)}s`;
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}m ${secs}s`;
         }
 
         // ===== VIEW MANAGEMENT =====
@@ -1536,7 +1915,7 @@
                     clips.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 }
 
-                // Collect tags
+                // Collect tags and players
                 tagFrequency = {};
                 allTags.clear();
                 clips.forEach(clip => {
@@ -1546,41 +1925,80 @@
                     });
                 });
 
+                // Collect all unique player names for smart display logic
+                const allPlayerNames = new Set();
+                clips.forEach(clip => {
+                    if (clip.players && Array.isArray(clip.players)) {
+                        clip.players.forEach(player => allPlayerNames.add(player));
+                    }
+                });
+                const allPlayersArray = Array.from(allPlayerNames);
+
+                // Load player autocomplete suggestions
+                loadAndUpdatePlayerSuggestions();
+
                 const container = document.getElementById('gameClipsContainer');
                 if (clips.length === 0) {
                     container.innerHTML = '<p>No clips created yet.</p>';
                 } else {
                     container.innerHTML = `
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Time Range</th>
-                                    <th>Tags</th>
-                                    <th>Notes</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                    <table class="clips-table">
+                        <thead>
+                            <tr>
+                                <th class="status-cell">●</th>
+                                <th class="times-cell">Time</th>
+                                <th class="players-cell">Players</th>
+                                <th class="tags-cell">Tags</th>
+                                <th class="actions-cell"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${clips.map(clip => {
+                                const formattedPlayers = formatPlayerNames(clip.players || [], allPlayersArray);
+                                return `
+                                <tr data-clip-id="${clip.id}"
+                                    data-start-time="${clip.start_time}"
+                                    data-end-time="${clip.end_time}"
+                                    data-tags='${JSON.stringify(clip.tags)}'
+                                    data-players='${JSON.stringify(clip.players || [])}'
+                                    data-status="${clip.status}"
+                                    data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}">
+                                    <td class="status-cell">
+                                        <div class="clip-status-indicator ${clip.status}" title="${clip.status}"></div>
+                                    </td>
+                                    <td class="times-cell">${clip.start_time} → ${clip.end_time}</td>
+                                    <td class="players-cell">${formattedPlayers ? `👤 ${formattedPlayers}` : ''}</td>
+                                    <td class="tags-cell">
+                                        <div class="tags">
+                                            ${clip.tags.map(tag => `<span class="tag clickable" onclick="event.stopPropagation(); filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join('')}
+                                        </div>
+                                        ${clip.notes ? `<div style="margin-top: 5px; color: var(--text-tertiary); font-size: 12px;">${clip.notes}</div>` : ''}
+                                    </td>
+                                    <td class="actions-cell">
+                                        <div class="clip-menu">
+                                            <button class="clip-menu-button" onclick="toggleClipMenu('${clip.id}')">⋮</button>
+                                            <div class="clip-menu-dropdown" id="menu-${clip.id}">
+                                                <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                     onclick="${clip.status === 'completed' ? `viewClipInline('${clip.id}')` : 'return false'}">
+                                                    View Clip
+                                                </div>
+                                                <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                     onclick="${clip.status === 'completed' ? `downloadClip('${clip.id}')` : 'return false'}">
+                                                    Download
+                                                </div>
+                                                <div class="clip-menu-item" onclick="showEditClipModal('${clip.id}')">
+                                                    Edit
+                                                </div>
+                                                <div class="clip-menu-item danger" onclick="deleteClipInline('${clip.id}')">
+                                                    Delete
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                ${clips.map(clip => `
-                                    <tr>
-                                        <td onclick="${clip.status === 'completed' ? `viewClipInline('${clip.id}')` : ''}" style="${clip.status === 'completed' ? 'cursor: pointer;' : ''}"><strong>${clip.start_time} → ${clip.end_time}</strong></td>
-                                        <td>${clip.tags.map(tag => `<span class="tag clickable" onclick="event.stopPropagation(); filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join(' ')}</td>
-                                        <td onclick="${clip.status === 'completed' ? `viewClipInline('${clip.id}')` : ''}" style="${clip.status === 'completed' ? 'cursor: pointer;' : ''}">${clip.notes || '-'}</td>
-                                        <td><span class="status status-${clip.status}">${clip.status.toUpperCase()}</span></td>
-                                        <td class="actions-cell">
-                                            ${clip.status === 'completed' ?
-                                                `<button class="btn-secondary" onclick="viewClipInline('${clip.id}')">View</button>
-                                                <button class="btn-secondary" onclick="downloadClip('${clip.id}')">Download</button>` :
-                                                ''}
-                                            <button class="btn-secondary" onclick="showEditClipModal('${clip.id}')">Edit</button>
-                                            <button class="btn-danger" onclick="deleteClipInline('${clip.id}')">Delete</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
+                            `}).join('')}
+                        </tbody>
+                    </table>`;
                 }
             } catch (error) {
                 console.error('Error loading clips:', error);
@@ -1634,6 +2052,33 @@
             }
         }
 
+        // Smart player name display logic
+        function formatPlayerNames(players, allPlayers) {
+            if (!players || players.length === 0) return '';
+
+            // Count first names across all players
+            const firstNameCounts = {};
+            allPlayers.forEach(playerName => {
+                const firstName = playerName.trim().split(/\s+/)[0];
+                firstNameCounts[firstName] = (firstNameCounts[firstName] || 0) + 1;
+            });
+
+            // Format each player name
+            return players.map(playerName => {
+                const parts = playerName.trim().split(/\s+/);
+                const firstName = parts[0];
+
+                // If duplicate first name exists, show first + last initial
+                if (firstNameCounts[firstName] > 1 && parts.length > 1) {
+                    const lastInitial = parts[parts.length - 1][0].toUpperCase();
+                    return `${firstName} ${lastInitial}.`;
+                }
+
+                // Otherwise just show first name
+                return firstName;
+            }).join(', ');
+        }
+
         async function loadClips(gameId = '') {
             try {
                 const url = gameId ? `${API_BASE}/clips?game_id=${gameId}` : `${API_BASE}/clips`;
@@ -1657,63 +2102,143 @@
                     });
                 });
 
+                // Collect all unique player names from all clips for smart display logic
+                const allPlayerNames = new Set();
+                clips.forEach(clip => {
+                    if (clip.players && Array.isArray(clip.players)) {
+                        clip.players.forEach(player => allPlayerNames.add(player));
+                    }
+                });
+                const allPlayersArray = Array.from(allPlayerNames);
+
                 // Update autocomplete and quick tags
                 updateTagSuggestions();
                 updateQuickTags();
-                
-                clipsListDiv.innerHTML = clips.map(clip => `
-                    <div class="clip-item"
-                         data-clip-id="${clip.id}"
-                         data-start-time="${clip.start_time}"
-                         data-end-time="${clip.end_time}"
-                         data-tags='${JSON.stringify(clip.tags)}'
-                         data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}">
-                        <div class="clip-times">
-                            <strong>${clip.start_time} → ${clip.end_time}</strong>
-                        </div>
-                        <div class="tags">
-                            ${clip.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        </div>
-                        ${clip.notes ? `<p style="margin-top: 10px; color: #666;">${clip.notes}</p>` : ''}
-                        <div style="margin-top: 10px;">
-                            <span class="status status-${clip.status}">${clip.status.toUpperCase()}</span>
-                        </div>
-                        <div class="clip-actions">
-                            ${clip.status === 'completed' ?
-                                `<button class="view-clip-btn" data-clip-id="${clip.id}">View Clip</button>
-                                <button class="btn-secondary" onclick="downloadClip('${clip.id}')">Download</button>` :
-                                ''}
-                            <button class="btn-secondary" onclick="showEditClipModal('${clip.id}')">Edit</button>
-                            <button class="btn-danger" onclick="deleteClip('${clip.id}')">Delete</button>
-                        </div>
-                    </div>
-                `).join('');
 
-                // Add event listeners to view clip buttons
-                document.querySelectorAll('.view-clip-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const clipItem = this.closest('.clip-item');
-                        const clipId = this.dataset.clipId;
-                        const startTime = clipItem.dataset.startTime;
-                        const endTime = clipItem.dataset.endTime;
-                        const tags = JSON.parse(clipItem.dataset.tags);
-                        const notes = clipItem.dataset.notes;
-                        viewClip(clipId, startTime, endTime, tags, notes);
-                    });
-                });
-                
+                // Load player autocomplete suggestions
+                loadAndUpdatePlayerSuggestions();
+
+                clipsListDiv.innerHTML = `
+                <table class="clips-table">
+                    <thead>
+                        <tr>
+                            <th class="status-cell">●</th>
+                            <th class="times-cell">Time</th>
+                            <th class="players-cell">Players</th>
+                            <th class="tags-cell">Tags</th>
+                            <th class="actions-cell"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clips.map(clip => {
+                            const formattedPlayers = formatPlayerNames(clip.players || [], allPlayersArray);
+                            return `
+                            <tr data-clip-id="${clip.id}"
+                                data-start-time="${clip.start_time}"
+                                data-end-time="${clip.end_time}"
+                                data-tags='${JSON.stringify(clip.tags)}'
+                                data-players='${JSON.stringify(clip.players || [])}'
+                                data-status="${clip.status}"
+                                data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}">
+                                <td class="status-cell">
+                                    <div class="clip-status-indicator ${clip.status}" title="${clip.status}"></div>
+                                </td>
+                                <td class="times-cell">${clip.start_time} → ${clip.end_time}</td>
+                                <td class="players-cell">${formattedPlayers ? `👤 ${formattedPlayers}` : ''}</td>
+                                <td class="tags-cell">
+                                    <div class="tags">
+                                        ${clip.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                    </div>
+                                    ${clip.notes ? `<div style="margin-top: 5px; color: var(--text-tertiary); font-size: 12px;">${clip.notes}</div>` : ''}
+                                </td>
+                                <td class="actions-cell">
+                                    <div class="clip-menu">
+                                        <button class="clip-menu-button" onclick="toggleClipMenu('${clip.id}')">⋮</button>
+                                        <div class="clip-menu-dropdown" id="menu-${clip.id}">
+                                            <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                 onclick="${clip.status === 'completed' ? `viewClipFromMenu('${clip.id}')` : 'return false'}">
+                                                View Clip
+                                            </div>
+                                            <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                 onclick="${clip.status === 'completed' ? `downloadClip('${clip.id}')` : 'return false'}">
+                                                Download
+                                            </div>
+                                            <div class="clip-menu-item" onclick="showEditClipModal('${clip.id}')">
+                                                Edit
+                                            </div>
+                                            <div class="clip-menu-item danger" onclick="deleteClip('${clip.id}')">
+                                                Delete
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>`;
+
             } catch (error) {
                 console.error('Error loading clips:', error);
-                document.getElementById('clipsList').innerHTML = 
+                document.getElementById('clipsList').innerHTML =
                     '<div class="error">Failed to load clips</div>';
             }
         }
 
+        // Toggle clip menu dropdown
+        function toggleClipMenu(clipId) {
+            const menu = document.getElementById(`menu-${clipId}`);
+            const isShown = menu.classList.contains('show');
+
+            // Close all other menus
+            document.querySelectorAll('.clip-menu-dropdown').forEach(m => {
+                m.classList.remove('show');
+            });
+
+            // Toggle this menu
+            if (!isShown) {
+                menu.classList.add('show');
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.clip-menu')) {
+                document.querySelectorAll('.clip-menu-dropdown').forEach(m => {
+                    m.classList.remove('show');
+                });
+            }
+        });
+
+        // View clip from menu
+        function viewClipFromMenu(clipId) {
+            const clipItem = document.querySelector(`[data-clip-id="${clipId}"]`);
+            if (!clipItem) return;
+
+            const startTime = clipItem.dataset.startTime;
+            const endTime = clipItem.dataset.endTime;
+            const tags = JSON.parse(clipItem.dataset.tags);
+            const players = JSON.parse(clipItem.dataset.players || '[]');
+            const notes = clipItem.dataset.notes;
+
+            // Close the menu
+            document.getElementById(`menu-${clipId}`).classList.remove('show');
+
+            viewClip(clipId, startTime, endTime, tags, players, notes);
+        }
+
         async function downloadClip(clipId) {
+            // Close the menu
+            const menu = document.getElementById(`menu-${clipId}`);
+            if (menu) menu.classList.remove('show');
+
             window.location.href = `${API_BASE}/clips/${clipId}/download`;
         }
 
         async function deleteClip(clipId) {
+            // Close the menu
+            const menu = document.getElementById(`menu-${clipId}`);
+            if (menu) menu.classList.remove('show');
+
             if (!confirm('Are you sure you want to delete this clip?')) return;
 
             try {
@@ -2083,7 +2608,7 @@
             }
         }
 
-        function viewClip(clipId, startTime, endTime, tags, notes) {
+        function viewClip(clipId, startTime, endTime, tags, players, notes) {
             // Set video source
             const videoSource = document.getElementById('viewClipSource');
             const video = document.getElementById('viewClipVideo');
@@ -2093,6 +2618,14 @@
 
             // Display clip info
             document.getElementById('viewClipTimes').innerHTML = `<strong>${startTime} → ${endTime}</strong>`;
+
+            // Display players (full names in view modal)
+            if (players && players.length > 0) {
+                document.getElementById('viewClipPlayers').innerHTML = `👤 <strong>Players:</strong> ${players.join(', ')}`;
+            } else {
+                document.getElementById('viewClipPlayers').innerHTML = '';
+            }
+
             document.getElementById('viewClipTags').innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
             document.getElementById('viewClipNotes').innerHTML = notes ? notes : '';
 
@@ -2358,6 +2891,26 @@
                 option.value = tag;
                 datalist.appendChild(option);
             });
+        }
+
+        async function loadAndUpdatePlayerSuggestions() {
+            try {
+                const response = await fetch(`${API_BASE}/players`);
+                const players = await response.json();
+                allPlayers = players;
+
+                const datalist = document.getElementById('playerSuggestions');
+                datalist.innerHTML = '';
+
+                // Add all unique players to datalist for autocomplete
+                players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player;
+                    datalist.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading players:', error);
+            }
         }
 
         function updateQuickTags() {
