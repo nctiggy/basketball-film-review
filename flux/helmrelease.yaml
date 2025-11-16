@@ -13,6 +13,7 @@ spec:
         name: basketball-film-review
         namespace: flux-system
       interval: 1m
+      reconcileStrategy: Revision
   # Automatically upgrade when new versions are available
   install:
     createNamespace: true
