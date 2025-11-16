@@ -211,9 +211,24 @@
             width: auto;
         }
 
+        .clips-table .notes-cell {
+            width: 250px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+
         .clips-table .actions-cell {
             width: 50px;
             text-align: center;
+        }
+
+        .clips-table tbody tr {
+            cursor: pointer;
+        }
+
+        .clips-table tbody tr.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .clip-status-indicator {
@@ -1949,6 +1964,7 @@
                                 <th class="times-cell">Time</th>
                                 <th class="players-cell">Players</th>
                                 <th class="tags-cell">Tags</th>
+                                <th class="notes-cell">Notes</th>
                                 <th class="actions-cell"></th>
                             </tr>
                         </thead>
@@ -1956,13 +1972,15 @@
                             ${clips.map(clip => {
                                 const formattedPlayers = formatPlayerNames(clip.players || [], allPlayersArray);
                                 return `
-                                <tr data-clip-id="${clip.id}"
+                                <tr class="${clip.status !== 'completed' ? 'disabled' : ''}"
+                                    data-clip-id="${clip.id}"
                                     data-start-time="${clip.start_time}"
                                     data-end-time="${clip.end_time}"
                                     data-tags='${JSON.stringify(clip.tags)}'
                                     data-players='${JSON.stringify(clip.players || [])}'
                                     data-status="${clip.status}"
-                                    data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}">
+                                    data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}"
+                                    onclick="handleClipRowClick(event, '${clip.id}', '${clip.status}')">
                                     <td class="status-cell">
                                         <div class="clip-status-indicator ${clip.status}" title="${clip.status}"></div>
                                     </td>
@@ -1972,9 +1990,9 @@
                                         <div class="tags">
                                             ${clip.tags.map(tag => `<span class="tag clickable" onclick="event.stopPropagation(); filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join('')}
                                         </div>
-                                        ${clip.notes ? `<div style="margin-top: 5px; color: var(--text-tertiary); font-size: 12px;">${clip.notes}</div>` : ''}
                                     </td>
-                                    <td class="actions-cell">
+                                    <td class="notes-cell">${clip.notes || ''}</td>
+                                    <td class="actions-cell" onclick="event.stopPropagation();">
                                         <div class="clip-menu">
                                             <button class="clip-menu-button" onclick="toggleClipMenu('${clip.id}')">⋮</button>
                                             <div class="clip-menu-dropdown" id="menu-${clip.id}">
@@ -2126,6 +2144,7 @@
                             <th class="times-cell">Time</th>
                             <th class="players-cell">Players</th>
                             <th class="tags-cell">Tags</th>
+                            <th class="notes-cell">Notes</th>
                             <th class="actions-cell"></th>
                         </tr>
                     </thead>
@@ -2133,13 +2152,15 @@
                         ${clips.map(clip => {
                             const formattedPlayers = formatPlayerNames(clip.players || [], allPlayersArray);
                             return `
-                            <tr data-clip-id="${clip.id}"
+                            <tr class="${clip.status !== 'completed' ? 'disabled' : ''}"
+                                data-clip-id="${clip.id}"
                                 data-start-time="${clip.start_time}"
                                 data-end-time="${clip.end_time}"
                                 data-tags='${JSON.stringify(clip.tags)}'
                                 data-players='${JSON.stringify(clip.players || [])}'
                                 data-status="${clip.status}"
-                                data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}">
+                                data-notes="${clip.notes ? clip.notes.replace(/"/g, '&quot;') : ''}"
+                                onclick="handleClipRowClick(event, '${clip.id}', '${clip.status}')">
                                 <td class="status-cell">
                                     <div class="clip-status-indicator ${clip.status}" title="${clip.status}"></div>
                                 </td>
@@ -2149,9 +2170,9 @@
                                     <div class="tags">
                                         ${clip.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                                     </div>
-                                    ${clip.notes ? `<div style="margin-top: 5px; color: var(--text-tertiary); font-size: 12px;">${clip.notes}</div>` : ''}
                                 </td>
-                                <td class="actions-cell">
+                                <td class="notes-cell">${clip.notes || ''}</td>
+                                <td class="actions-cell" onclick="event.stopPropagation();">
                                     <div class="clip-menu">
                                         <button class="clip-menu-button" onclick="toggleClipMenu('${clip.id}')">⋮</button>
                                         <div class="clip-menu-dropdown" id="menu-${clip.id}">
@@ -2210,6 +2231,32 @@
         });
 
         // View clip from menu
+        // Handle clicking on a clip row (anywhere except tags/players/actions)
+        function handleClipRowClick(event, clipId, status) {
+            // Don't open clip if it's not completed
+            if (status !== 'completed') {
+                return;
+            }
+
+            // Don't trigger if clicking on interactive elements
+            const target = event.target;
+            if (target.closest('.tag') || target.closest('.clip-menu') || target.closest('.actions-cell')) {
+                return;
+            }
+
+            // Get clip data and open viewer
+            const clipItem = document.querySelector(`[data-clip-id="${clipId}"]`);
+            if (!clipItem) return;
+
+            const startTime = clipItem.dataset.startTime;
+            const endTime = clipItem.dataset.endTime;
+            const tags = JSON.parse(clipItem.dataset.tags);
+            const players = JSON.parse(clipItem.dataset.players || '[]');
+            const notes = clipItem.dataset.notes;
+
+            viewClip(clipId, startTime, endTime, tags, players, notes);
+        }
+
         function viewClipFromMenu(clipId) {
             const clipItem = document.querySelector(`[data-clip-id="${clipId}"]`);
             if (!clipItem) return;
