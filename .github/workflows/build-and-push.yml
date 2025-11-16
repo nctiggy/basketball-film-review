@@ -181,12 +181,7 @@ jobs:
           fi
 
           git add helm/values.yaml frontend/index.html
-          git commit -m "chore: bump version to ${VERSION}
-
-Auto-updated by GitHub Actions
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)"
-
+          git commit -m "chore: bump version to ${VERSION}" -m "Auto-updated by GitHub Actions" -m "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
           git push
 
       - name: Create Git tag
