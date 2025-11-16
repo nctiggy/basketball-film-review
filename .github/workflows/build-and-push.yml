@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # Required to push commits and tags
+
 env:
   REGISTRY: docker.io
   IMAGE_REGISTRY: nctiggy
