@@ -160,17 +160,14 @@ jobs:
         run: |
           VERSION="${{ needs.determine-version.outputs.version }}"
 
-          # Update backend image tag if backend changed
-          if [ "${{ needs.determine-version.outputs.backend_changed }}" == "true" ]; then
-            sed -i "s/tag: [0-9]\+\.[0-9]\+\.[0-9]\+/tag: ${VERSION}/" helm/values.yaml
-            echo "Updated backend tag to ${VERSION}"
-          fi
+          # Always update both image tags to keep them in sync
+          # Update backend tag (first occurrence)
+          sed -i "0,/tag: [0-9]\+\.[0-9]\+\.[0-9]\+/s//tag: ${VERSION}/" helm/values.yaml
+          echo "Updated backend tag to ${VERSION}"
 
-          # Update frontend image tag if frontend changed
-          if [ "${{ needs.determine-version.outputs.frontend_changed }}" == "true" ]; then
-            sed -i "/^frontend:/,/^[^ ]/ s/tag: [0-9]\+\.[0-9]\+\.[0-9]\+/tag: ${VERSION}/" helm/values.yaml
-            echo "Updated frontend tag to ${VERSION}"
-          fi
+          # Update frontend tag (second occurrence)
+          sed -i "0,/tag: [0-9]\+\.[0-9]\+\.[0-9]\+/s//tag: ${VERSION}/" helm/values.yaml
+          echo "Updated frontend tag to ${VERSION}"
 
       - name: Commit and push changes
         run: |
