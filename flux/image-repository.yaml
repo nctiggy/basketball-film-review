@@ -1,0 +1,18 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: backend
+  namespace: flux-system
+spec:
+  image: nctiggy/basketball-film-review-backend
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: frontend
+  namespace: flux-system
+spec:
+  image: nctiggy/basketball-film-review-frontend
+  interval: 1m

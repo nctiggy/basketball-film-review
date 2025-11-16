@@ -1,0 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: basketball-film-review
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/nctiggy/basketball-film-review
+  ref:
+    branch: main
+  ignore: |
+    # Ignore everything except Helm chart and Flux configs
+    /*
+    !/helm/**
+    !/flux/**

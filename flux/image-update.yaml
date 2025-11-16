@@ -1,0 +1,27 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: basketball-film-review
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: basketball-film-review
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: flux@users.noreply.github.com
+        name: Flux Image Automation
+      messageTemplate: |
+        chore: update image tags
+
+        Automated image update by Flux
+
+        🤖 Generated with Flux Image Automation
+  update:
+    path: ./helm
+    strategy: Setters

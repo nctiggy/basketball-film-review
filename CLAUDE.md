@@ -2,74 +2,139 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## ⚠️ CRITICAL: After Making Changes Checklist
+## ⚠️ CRITICAL: CI/CD Workflow (Automated!)
 
-**EVERY TIME** you make changes to backend or frontend code, you MUST follow these steps IN ORDER:
+**GOOD NEWS**: Most of the build/deploy process is now automated with GitHub Actions and Flux CD!
 
-### 1. Update Version Footer (if frontend changes)
+### The New Workflow (Mostly Automated)
+
+1. **Make your code changes** to backend or frontend
+2. **Commit with conventional commit messages**:
+   - `feat:` for new features → Minor version bump (1.0.0 → 1.1.0)
+   - `fix:` for bug fixes → Patch version bump (1.0.0 → 1.0.1)
+   - `BREAKING CHANGE:` or `feat!:` → Major version bump (1.0.0 → 2.0.0)
+3. **Push to main branch** - that's it!
+
+### What Happens Automatically
+
+```
+Your Push → GitHub Actions → Flux CD → Deployed!
+```
+
+**GitHub Actions** (.github/workflows/build-and-push.yml):
+- ✅ Detects which components changed (backend/frontend)
+- ✅ Determines semantic version from commit messages
+- ✅ Builds with `docker buildx --platform linux/amd64`
+- ✅ Updates footer version in frontend
+- ✅ Pushes images to Docker Hub
+- ✅ Updates `helm/values.yaml` with new image tags
+- ✅ Commits changes back to Git
+- ✅ Creates Git tag (e.g., v1.0.9)
+
+**Flux CD** (flux/):
+- ✅ Watches Git repo for Helm chart changes
+- ✅ Watches Docker Hub for new images
+- ✅ Automatically deploys to Kubernetes
+- ✅ Monitors rollout status
+- ✅ Retries on failure
+
+### Manual Steps (Only if needed)
+
+#### If CI/CD is not set up yet:
+1. **Configure GitHub Secrets** (one-time setup):
+   - Go to repository Settings → Secrets and variables → Actions
+   - Add `DOCKER_USERNAME`: nctiggy
+   - Add `DOCKER_PASSWORD`: Your Docker Hub token
+
+2. **Configure Flux Git Push** (one-time setup):
+   ```bash
+   # Create GitHub Personal Access Token with 'repo' scope
+   export GITHUB_TOKEN=<your-pat>
+   export KUBECONFIG=admin.app-eng.kubeconfig
+
+   kubectl create secret generic flux-system \
+     --namespace=flux-system \
+     --from-literal=username=git \
+     --from-literal=password=${GITHUB_TOKEN}
+   ```
+
+#### If you need to deploy manually (CI/CD bypassed):
+```bash
+export KUBECONFIG=admin.app-eng.kubeconfig
+
+# Suspend Flux (prevent conflicts)
+flux suspend helmrelease basketball-film-review -n film-review
+
+# Deploy manually
+helm upgrade basketball-film-review ./helm -n film-review
+
+# Resume Flux
+flux resume helmrelease basketball-film-review -n film-review
+```
+
+### Monitoring the Pipeline
+
+```bash
+export KUBECONFIG=admin.app-eng.kubeconfig
+
+# Check Flux status
+flux get all -A
+
+# Check HelmRelease
+flux get helmrelease -n film-review
+
+# Check image automation
+flux get image repository -A
+flux get image policy -A
+
+# View logs
+kubectl logs -n flux-system deployment/helm-controller -f
+```
+
+### OLD MANUAL WORKFLOW (Deprecated - use only if CI/CD is broken)
+
+<details>
+<summary>Click to expand manual workflow</summary>
+
+#### 1. Update Version Footer (if frontend changes)
 If you modified `frontend/index.html`, update the version in the footer:
 - Find the footer version number (search for "Version")
 - Increment using semantic versioning: MAJOR.MINOR.PATCH
-  - MAJOR: Breaking changes or major new features
-  - MINOR: New features, significant UI changes
-  - PATCH: Bug fixes, small tweaks
 
-### 2. Build Images with Buildx for AMD64
-**ALWAYS use `docker buildx` with `--platform linux/amd64`** - the cluster runs AMD64 nodes!
-
+#### 2. Build Images with Buildx for AMD64
 ```bash
-# Set version (use same version from footer)
 export IMAGE_REGISTRY="nctiggy"
-export IMAGE_TAG="1.0.X"  # INCREMENT THIS!
+export IMAGE_TAG="1.0.X"
 
-# Backend (if changed)
 docker buildx build --platform linux/amd64 \
   -t ${IMAGE_REGISTRY}/basketball-film-review-backend:${IMAGE_TAG} \
   -f backend/Dockerfile backend/ --push
 
-# Frontend (if changed)
 docker buildx build --platform linux/amd64 \
   -t ${IMAGE_REGISTRY}/basketball-film-review-frontend:${IMAGE_TAG} \
   -f frontend/Dockerfile frontend/ --push
 ```
 
-### 3. Update Helm Values
-Edit `helm/values.yaml` and update the image tags:
-```yaml
-backend:
-  image:
-    tag: 1.0.X  # Update to match IMAGE_TAG
+#### 3. Update Helm Values
+Edit `helm/values.yaml` and update the image tags
 
-frontend:
-  image:
-    tag: 1.0.X  # Update to match IMAGE_TAG
-```
-
-### 4. Deploy to Kubernetes
+#### 4. Deploy to Kubernetes
 ```bash
 export KUBECONFIG=admin.app-eng.kubeconfig
 helm upgrade basketball-film-review ./helm --namespace film-review
-kubectl rollout status deployment/basketball-film-review-backend -n film-review
-kubectl rollout status deployment/basketball-film-review-frontend -n film-review
 ```
 
-### 5. Commit Changes to Git
-**ALWAYS commit after successful deployment**:
+#### 5. Commit Changes to Git
 ```bash
 git add .
-git commit -m "Descriptive message about what changed
+git commit -m "Descriptive message
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 git push
 ```
-
-**DO NOT SKIP THESE STEPS!** The user expects:
-- ✅ Buildx for AMD64 (not native ARM builds)
-- ✅ Version increments in footer
-- ✅ Git commits after changes
-- ✅ Helm values updated with new image tags
+</details>
 
 ## Project Overview
 
