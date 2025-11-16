@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for semantic versioning
+          fetch-tags: true  # Fetch tags for semantic versioning
 
       - name: Detect changes
         uses: dorny/paths-filter@v3
