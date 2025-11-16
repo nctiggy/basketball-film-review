@@ -1,0 +1,60 @@
+{{- if .Values.cloudflared.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-cloudflared
+  labels:
+    app: {{ .Values.app.name }}
+    component: cloudflared
+spec:
+  replicas: {{ .Values.cloudflared.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+      component: cloudflared
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+        component: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:{{ .Values.cloudflared.image.tag }}
+        imagePullPolicy: {{ .Values.cloudflared.image.pullPolicy }}
+        args:
+          - tunnel
+          - --config
+          - /etc/cloudflared/config/config.yaml
+          - run
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+          - name: config
+            mountPath: /etc/cloudflared/config
+            readOnly: true
+          - name: creds
+            mountPath: /etc/cloudflared/creds
+            readOnly: true
+        resources:
+          {{- toYaml .Values.cloudflared.resources | nindent 10 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.app.name }}-cloudflared-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+        - name: creds
+          secret:
+            {{- if .Values.externalSecrets.enabled }}
+            secretName: {{ .Values.app.name }}-cloudflared-credentials
+            {{- else }}
+            secretName: {{ .Values.app.name }}-cloudflared-credentials-manual
+            {{- end }}
+{{- end }}
