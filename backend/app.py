@@ -76,11 +76,25 @@ async def lifespan(app: FastAPI):
                 start_time VARCHAR(20) NOT NULL,
                 end_time VARCHAR(20) NOT NULL,
                 tags TEXT[] NOT NULL,
+                players TEXT[] DEFAULT '{}',
                 notes TEXT,
                 clip_path VARCHAR(500),
                 status VARCHAR(50) DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT NOW()
             )
+        """)
+
+        # Add players column to existing clips table if it doesn't exist
+        await conn.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='clips' AND column_name='players'
+                ) THEN
+                    ALTER TABLE clips ADD COLUMN players TEXT[] DEFAULT '{}';
+                END IF;
+            END $$;
         """)
     
     yield
@@ -124,6 +138,7 @@ class ClipCreate(BaseModel):
     start_time: str
     end_time: str
     tags: List[str]
+    players: List[str] = []
     notes: Optional[str] = None
 
 class Clip(BaseModel):
@@ -133,6 +148,7 @@ class Clip(BaseModel):
     start_time: str
     end_time: str
     tags: List[str]
+    players: List[str]
     notes: Optional[str]
     clip_path: Optional[str]
     status: str
@@ -229,35 +245,86 @@ async def process_clip(clip_id: str, game_video_path: str, start_time: str, end_
                 "UPDATE clips SET status = 'processing' WHERE id = $1",
                 uuid.UUID(clip_id)
             )
-        
-        # Download video from MinIO
+
+        # Download video from MinIO (run in thread pool to avoid blocking)
+        loop = asyncio.get_event_loop()
         minio_client = get_minio_client()
         local_video_path = f"/tmp/{uuid.uuid4()}.mp4"
-        minio_client.fget_object(BUCKET_NAME, game_video_path, local_video_path)
-        
+
+        await loop.run_in_executor(
+            None,
+            lambda: minio_client.fget_object(BUCKET_NAME, game_video_path, local_video_path)
+        )
+
         # Convert time format
         start = time_to_seconds(start_time)
         end = time_to_seconds(end_time)
-        
-        # Extract clip
+
+        # Extract clip using async subprocess
         output_path = f"/tmp/clip_{clip_id}.mp4"
-        cmd = [
-            "ffmpeg",
-            "-i", local_video_path,
-            "-ss", start,
-            "-to", end,
-            "-c:v", "libx264",
-            "-c:a", "aac",
-            "-y",
-            output_path
-        ]
-        
-        subprocess.run(cmd, check=True, capture_output=True)
-        
-        # Upload clip to MinIO
+
+        # Try GPU-accelerated encoding first (NVIDIA), fallback to CPU
+        # Check if nvidia GPU is available
+        try:
+            gpu_check = await asyncio.create_subprocess_exec(
+                "nvidia-smi",
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await gpu_check.wait()
+            use_gpu = gpu_check.returncode == 0
+        except FileNotFoundError:
+            use_gpu = False
+
+        if use_gpu:
+            # GPU-accelerated encoding with NVENC
+            cmd = [
+                "ffmpeg",
+                "-hwaccel", "cuda",
+                "-hwaccel_output_format", "cuda",
+                "-i", local_video_path,
+                "-ss", start,
+                "-to", end,
+                "-c:v", "h264_nvenc",
+                "-preset", "p4",  # Fast preset
+                "-c:a", "aac",
+                "-y",
+                output_path
+            ]
+            print(f"Using GPU acceleration for clip {clip_id}")
+        else:
+            # CPU encoding with faster preset
+            cmd = [
+                "ffmpeg",
+                "-i", local_video_path,
+                "-ss", start,
+                "-to", end,
+                "-c:v", "libx264",
+                "-preset", "veryfast",  # Faster encoding
+                "-c:a", "aac",
+                "-y",
+                output_path
+            ]
+            print(f"Using CPU encoding for clip {clip_id}")
+
+        # Run ffmpeg asynchronously (non-blocking)
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+
+        if process.returncode != 0:
+            raise Exception(f"ffmpeg failed: {stderr.decode()}")
+
+        # Upload clip to MinIO (run in thread pool)
         clip_minio_path = f"clips/{clip_id}.mp4"
-        minio_client.fput_object(BUCKET_NAME, clip_minio_path, output_path)
-        
+        await loop.run_in_executor(
+            None,
+            lambda: minio_client.fput_object(BUCKET_NAME, clip_minio_path, output_path)
+        )
+
         # Update database
         async with db_pool.acquire() as conn:
             await conn.execute(
@@ -265,11 +332,11 @@ async def process_clip(clip_id: str, game_video_path: str, start_time: str, end_
                 clip_minio_path,
                 uuid.UUID(clip_id)
             )
-        
+
         # Cleanup
         os.remove(local_video_path)
         os.remove(output_path)
-        
+
     except Exception as e:
         print(f"Error processing clip {clip_id}: {e}")
         async with db_pool.acquire() as conn:
@@ -672,9 +739,9 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO clips (id, game_id, video_id, start_time, end_time, tags, notes)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, game_id, video_id, start_time, end_time, tags, notes, clip_path, status, created_at
+            INSERT INTO clips (id, game_id, video_id, start_time, end_time, tags, players, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, game_id, video_id, start_time, end_time, tags, players, notes, clip_path, status, created_at
             """,
             uuid.UUID(clip_id),
             uuid.UUID(clip.game_id),
@@ -682,6 +749,7 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
             clip.start_time,
             clip.end_time,
             clip.tags,
+            clip.players,
             clip.notes
         )
 
@@ -701,6 +769,7 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
         "start_time": row["start_time"],
         "end_time": row["end_time"],
         "tags": row["tags"],
+        "players": row["players"],
         "notes": row["notes"],
         "clip_path": row["clip_path"],
         "status": row["status"],
@@ -734,6 +803,7 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
             "start_time": row["start_time"],
             "end_time": row["end_time"],
             "tags": row["tags"],
+        "players": row["players"],
             "notes": row["notes"],
             "clip_path": row["clip_path"],
             "status": row["status"],
@@ -761,6 +831,7 @@ async def get_clip(clip_id: str):
         "start_time": row["start_time"],
         "end_time": row["end_time"],
         "tags": row["tags"],
+        "players": row["players"],
         "notes": row["notes"],
         "clip_path": row["clip_path"],
         "status": row["status"],
@@ -769,16 +840,16 @@ async def get_clip(clip_id: str):
 
 @app.put("/clips/{clip_id}", response_model=Clip)
 async def update_clip(clip_id: str, clip: ClipCreate):
-    """Update clip metadata (tags, notes, timestamps)"""
+    """Update clip metadata (tags, players, notes, timestamps)"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
             UPDATE clips
-            SET start_time = $1, end_time = $2, tags = $3, notes = $4
-            WHERE id = $5
-            RETURNING id, game_id, video_id, start_time, end_time, tags, notes, clip_path, status, created_at
+            SET start_time = $1, end_time = $2, tags = $3, players = $4, notes = $5
+            WHERE id = $6
+            RETURNING id, game_id, video_id, start_time, end_time, tags, players, notes, clip_path, status, created_at
             """,
-            clip.start_time, clip.end_time, clip.tags, clip.notes, uuid.UUID(clip_id)
+            clip.start_time, clip.end_time, clip.tags, clip.players, clip.notes, uuid.UUID(clip_id)
         )
 
         if not row:
@@ -791,6 +862,7 @@ async def update_clip(clip_id: str, clip: ClipCreate):
         "start_time": row["start_time"],
         "end_time": row["end_time"],
         "tags": row["tags"],
+        "players": row["players"],
         "notes": row["notes"],
         "clip_path": row["clip_path"],
         "status": row["status"],
@@ -870,6 +942,16 @@ async def delete_clip(clip_id: str):
         )
     
     return {"message": "Clip deleted successfully"}
+
+@app.get("/players")
+async def get_players():
+    """Get all unique players from clips"""
+    async with db_pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT DISTINCT unnest(players) as player FROM clips WHERE array_length(players, 1) > 0 ORDER BY player"
+        )
+
+    return [row["player"] for row in rows]
 
 if __name__ == "__main__":
     import uvicorn
