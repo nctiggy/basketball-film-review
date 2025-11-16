@@ -20,6 +20,7 @@ spec:
     remediation:
       retries: 3
   upgrade:
+    force: true
     remediation:
       retries: 3
   # Values from helm/values.yaml are used by default
