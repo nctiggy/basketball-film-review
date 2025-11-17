@@ -13,9 +13,9 @@ backend:
     type: LoadBalancer
     port: 8000
 
-  # GPU configuration
+  # GPU configuration - DISABLED: GPU processing moved to clip-operator Jobs
   gpu:
-    enabled: true
+    enabled: false
     nodeSelector:
       kubernetes.io/hostname: node13
     tolerations: []

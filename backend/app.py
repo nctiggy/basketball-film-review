@@ -13,6 +13,8 @@ from minio.error import S3Error
 import asyncio
 import json
 from contextlib import asynccontextmanager
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 
 # Configuration from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://filmreview:filmreview@postgres:5432/filmreview")
@@ -31,7 +33,14 @@ async def lifespan(app: FastAPI):
     # Startup
     global db_pool
     db_pool = await asyncpg.create_pool(DATABASE_URL)
-    
+
+    # Initialize Kubernetes client (in-cluster config)
+    try:
+        config.load_incluster_config()
+        print("Loaded in-cluster Kubernetes config")
+    except config.ConfigException:
+        print("Warning: Could not load in-cluster config, Kubernetes features disabled")
+
     # Initialize MinIO client
     minio_client = Minio(
         MINIO_ENDPOINT,
@@ -236,109 +245,58 @@ async def stream_video_with_range(request: Request, object_path: str, minio_clie
     except S3Error as e:
         raise HTTPException(status_code=404, detail=f"Video not found: {str(e)}")
 
-async def process_clip(clip_id: str, game_video_path: str, start_time: str, end_time: str):
-    """Background task to extract video clip using ffmpeg"""
+async def create_clipjob(clip_id: str, game_video_path: str, start_time: str, end_time: str):
+    """Create a ClipJob custom resource for the operator to process"""
     try:
-        # Update status to processing
-        async with db_pool.acquire() as conn:
-            await conn.execute(
-                "UPDATE clips SET status = 'processing' WHERE id = $1",
-                uuid.UUID(clip_id)
-            )
+        # Create Kubernetes API client
+        custom_api = client.CustomObjectsApi()
 
-        # Download video from MinIO (run in thread pool to avoid blocking)
+        # Define the ClipJob resource
+        clip_path = f"clips/{clip_id}.mp4"
+        clipjob = {
+            "apiVersion": "filmreview.io/v1alpha1",
+            "kind": "ClipJob",
+            "metadata": {
+                "name": f"clip-{clip_id}",
+                "namespace": "film-review"
+            },
+            "spec": {
+                "clipId": clip_id,
+                "videoPath": game_video_path,
+                "clipPath": clip_path,
+                "startTime": start_time,
+                "endTime": end_time,
+                "ttlSecondsAfterFinished": 3600,
+                "backoffLimit": 3
+            }
+        }
+
+        # Create the ClipJob resource
         loop = asyncio.get_event_loop()
-        minio_client = get_minio_client()
-        local_video_path = f"/tmp/{uuid.uuid4()}.mp4"
-
         await loop.run_in_executor(
             None,
-            lambda: minio_client.fget_object(BUCKET_NAME, game_video_path, local_video_path)
-        )
-
-        # Convert time format
-        start = time_to_seconds(start_time)
-        end = time_to_seconds(end_time)
-
-        # Extract clip using async subprocess
-        output_path = f"/tmp/clip_{clip_id}.mp4"
-
-        # Try GPU-accelerated encoding first (NVIDIA), fallback to CPU
-        # Check if nvidia GPU is available
-        try:
-            gpu_check = await asyncio.create_subprocess_exec(
-                "nvidia-smi",
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL
+            lambda: custom_api.create_namespaced_custom_object(
+                group="filmreview.io",
+                version="v1alpha1",
+                namespace="film-review",
+                plural="clipjobs",
+                body=clipjob
             )
-            await gpu_check.wait()
-            use_gpu = gpu_check.returncode == 0
-        except FileNotFoundError:
-            use_gpu = False
-
-        if use_gpu:
-            # GPU-accelerated encoding with NVENC
-            cmd = [
-                "ffmpeg",
-                "-hwaccel", "cuda",
-                "-hwaccel_output_format", "cuda",
-                "-i", local_video_path,
-                "-ss", start,
-                "-to", end,
-                "-c:v", "h264_nvenc",
-                "-preset", "p4",  # Fast preset
-                "-c:a", "aac",
-                "-y",
-                output_path
-            ]
-            print(f"Using GPU acceleration for clip {clip_id}")
-        else:
-            # CPU encoding with faster preset
-            cmd = [
-                "ffmpeg",
-                "-i", local_video_path,
-                "-ss", start,
-                "-to", end,
-                "-c:v", "libx264",
-                "-preset", "veryfast",  # Faster encoding
-                "-c:a", "aac",
-                "-y",
-                output_path
-            ]
-            print(f"Using CPU encoding for clip {clip_id}")
-
-        # Run ffmpeg asynchronously (non-blocking)
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-
-        if process.returncode != 0:
-            raise Exception(f"ffmpeg failed: {stderr.decode()}")
-
-        # Upload clip to MinIO (run in thread pool)
-        clip_minio_path = f"clips/{clip_id}.mp4"
-        await loop.run_in_executor(
-            None,
-            lambda: minio_client.fput_object(BUCKET_NAME, clip_minio_path, output_path)
         )
 
-        # Update database
+        print(f"Created ClipJob for clip {clip_id}")
+
+    except ApiException as e:
+        print(f"Error creating ClipJob for clip {clip_id}: {e}")
+        # Update clip status to failed
         async with db_pool.acquire() as conn:
             await conn.execute(
-                "UPDATE clips SET status = 'completed', clip_path = $1 WHERE id = $2",
-                clip_minio_path,
+                "UPDATE clips SET status = 'failed' WHERE id = $1",
                 uuid.UUID(clip_id)
             )
-
-        # Cleanup
-        os.remove(local_video_path)
-        os.remove(output_path)
-
     except Exception as e:
-        print(f"Error processing clip {clip_id}: {e}")
+        print(f"Unexpected error creating ClipJob for clip {clip_id}: {str(e)}")
+        # Update clip status to failed
         async with db_pool.acquire() as conn:
             await conn.execute(
                 "UPDATE clips SET status = 'failed' WHERE id = $1",
@@ -753,9 +711,9 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
             clip.notes
         )
 
-    # Queue clip processing
+    # Create ClipJob for async processing via operator
     background_tasks.add_task(
-        process_clip,
+        create_clipjob,
         clip_id,
         video["video_path"],
         clip.start_time,
