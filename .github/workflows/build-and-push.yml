@@ -38,6 +38,10 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            clip-operator:
+              - 'clip-operator/src/**'
+            clip-worker:
+              - 'clip-operator/worker/**'
 
       - name: Get latest tag
         id: get_tag
@@ -144,6 +148,64 @@ jobs:
             ${{ env.IMAGE_REGISTRY }}/basketball-film-review-frontend:${{ needs.determine-version.outputs.version }}
             ${{ env.IMAGE_REGISTRY }}/basketball-film-review-frontend:latest
           cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/basketball-film-review-frontend:latest
+          cache-to: type=inline
+
+  build-clip-operator:
+    needs: determine-version
+    if: needs.determine-version.outputs.clip-operator_changed == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push clip-operator
+        uses: docker/build-push-action@v5
+        with:
+          context: ./clip-operator/src
+          file: ./clip-operator/src/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/clip-operator:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/clip-operator:latest
+          cache-to: type=inline
+
+  build-clip-worker:
+    needs: determine-version
+    if: needs.determine-version.outputs.clip-worker_changed == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push clip-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./clip-operator/worker
+          file: ./clip-operator/worker/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/clip-processor:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/clip-processor:latest
           cache-to: type=inline
 
   update-helm-values:

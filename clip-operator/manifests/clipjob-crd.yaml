@@ -1,0 +1,104 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: clipjobs.filmreview.io
+spec:
+  group: filmreview.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - clipId
+                - gameId
+                - videoId
+                - startTime
+                - endTime
+                - videoPath
+                - clipPath
+              properties:
+                clipId:
+                  type: string
+                  description: UUID of the clip in database
+                gameId:
+                  type: string
+                  description: UUID of the game
+                videoId:
+                  type: string
+                  description: UUID of the video
+                startTime:
+                  type: string
+                  description: Clip start time (e.g., "5:30" or "1:05:30")
+                endTime:
+                  type: string
+                  description: Clip end time (e.g., "5:45" or "1:05:45")
+                videoPath:
+                  type: string
+                  description: Path to source video in MinIO
+                clipPath:
+                  type: string
+                  description: Path where clip should be saved in MinIO
+                minioEndpoint:
+                  type: string
+                  default: "basketball-film-review-minio:9000"
+                  description: MinIO endpoint
+                minioSecretRef:
+                  type: object
+                  default:
+                    name: basketball-film-review-minio-credentials
+                  properties:
+                    name:
+                      type: string
+                ttlSecondsAfterFinished:
+                  type: integer
+                  default: 3600
+                  description: Time to keep Job after completion
+                backoffLimit:
+                  type: integer
+                  default: 3
+                  description: Number of retries on failure
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Running
+                    - Succeeded
+                    - Failed
+                startTime:
+                  type: string
+                  format: date-time
+                completionTime:
+                  type: string
+                  format: date-time
+                message:
+                  type: string
+                jobName:
+                  type: string
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: Job
+          type: string
+          jsonPath: .status.jobName
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+  scope: Namespaced
+  names:
+    plural: clipjobs
+    singular: clipjob
+    kind: ClipJob
+    shortNames:
+      - cj
