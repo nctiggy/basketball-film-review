@@ -82,7 +82,7 @@ postgresql:
     persistence:
       enabled: true
       size: 10Gi
-      storageClass: ""
+      storageClass: "spectro-storage-class"
     resources:
       limits:
         cpu: 500m
@@ -102,7 +102,7 @@ minio:
   persistence:
     enabled: true
     size: 400Gi
-    storageClass: ""
+    storageClass: "spectro-storage-class"
   
   resources:
     requests:
