@@ -145,10 +145,11 @@ def create_clip_job(spec: Dict[str, Any], name: str, namespace: str, **kwargs):
         }
 
 
-@kopf.on.field('batch', 'v1', 'jobs', field='status.conditions')
+@kopf.on.field('batch', 'v1', 'jobs', field='status.conditions', labels={'clipjob': kopf.PRESENT})
 def job_status_changed(new, old, namespace, labels, **kwargs):
     """
     Watch for Job completion and update corresponding ClipJob status.
+    Only watches Jobs with the 'clipjob' label (created by this operator).
     """
     # Only process jobs created by ClipJobs
     if not labels or 'clipjob' not in labels:
