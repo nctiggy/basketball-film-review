@@ -260,7 +260,7 @@ async def stream_video_with_range(request: Request, object_path: str, minio_clie
     except S3Error as e:
         raise HTTPException(status_code=404, detail=f"Video not found: {str(e)}")
 
-async def create_clipjob(clip_id: str, game_video_path: str, start_time: str, end_time: str):
+async def create_clipjob(clip_id: str, game_id: str, video_id: str, game_video_path: str, start_time: str, end_time: str):
     """Create a ClipJob custom resource for the operator to process"""
     try:
         # Create Kubernetes API client
@@ -277,6 +277,8 @@ async def create_clipjob(clip_id: str, game_video_path: str, start_time: str, en
             },
             "spec": {
                 "clipId": clip_id,
+                "gameId": game_id,
+                "videoId": video_id,
                 "videoPath": game_video_path,
                 "clipPath": clip_path,
                 "startTime": start_time,
@@ -730,6 +732,8 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
     background_tasks.add_task(
         create_clipjob,
         clip_id,
+        clip.game_id,
+        clip.video_id,
         video["video_path"],
         clip.start_time,
         clip.end_time
