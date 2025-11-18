@@ -17,6 +17,7 @@ spec:
         app: {{ .Values.app.name }}
         component: frontend
     spec:
+      serviceAccountName: {{ include "basketball-film-review.fullname" . }}-backend
       containers:
       - name: frontend
         image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"

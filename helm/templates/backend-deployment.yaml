@@ -17,6 +17,7 @@ spec:
         app: {{ .Values.app.name }}
         component: backend
     spec:
+      serviceAccountName: {{ include "basketball-film-review.fullname" . }}-backend
       {{- if .Values.backend.gpu.enabled }}
       {{- if .Values.backend.gpu.nodeSelector }}
       nodeSelector:

@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-backend
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    component: backend
+subjects:
+- kind: ServiceAccount
+  name: {{ include "basketball-film-review.fullname" . }}-backend
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "basketball-film-review.fullname" . }}-backend
+  apiGroup: rbac.authorization.k8s.io

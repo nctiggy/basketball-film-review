@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-backend
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    component: backend
+rules:
+- apiGroups: ["filmreview.io"]
+  resources: ["clipjobs"]
+  verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+- apiGroups: ["filmreview.io"]
+  resources: ["clipjobs/status"]
+  verbs: ["get", "update", "patch"]
