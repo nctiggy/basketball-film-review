@@ -92,7 +92,7 @@ def main():
             # Download video from MinIO
             logger.info("Downloading video from MinIO...")
             minio_client.fget_object(
-                bucket_name="basketball-videos",
+                bucket_name="basketball-clips",
                 object_name=video_path,
                 file_path=input_file
             )
@@ -134,7 +134,7 @@ def main():
             # Upload clip to MinIO
             logger.info("Uploading clip to MinIO...")
             minio_client.fput_object(
-                bucket_name="basketball-videos",
+                bucket_name="basketball-clips",
                 object_name=clip_path,
                 file_path=output_file,
                 content_type="video/mp4"
