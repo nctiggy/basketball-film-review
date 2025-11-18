@@ -200,6 +200,21 @@ async def stream_video_with_range(request: Request, object_path: str, minio_clie
         # Parse range header
         range_header = request.headers.get("range")
 
+        # Async generator to yield chunks from MinIO stream
+        async def stream_generator(response_data, chunk_size=1024*1024):  # 1MB chunks
+            try:
+                loop = asyncio.get_event_loop()
+                while True:
+                    # Read chunk in thread pool to avoid blocking
+                    chunk = await loop.run_in_executor(None, response_data.read, chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+            finally:
+                # Ensure stream is closed
+                response_data.close()
+                response_data.release_conn()
+
         if range_header:
             # Parse range header (format: "bytes=start-end")
             range_match = range_header.replace("bytes=", "").split("-")
@@ -220,7 +235,7 @@ async def stream_video_with_range(request: Request, object_path: str, minio_clie
 
             # Return 206 Partial Content
             return StreamingResponse(
-                response_data.stream(),
+                stream_generator(response_data),
                 status_code=206,
                 media_type="video/mp4",
                 headers={
@@ -234,7 +249,7 @@ async def stream_video_with_range(request: Request, object_path: str, minio_clie
             # No range header, return full file
             response_data = minio_client.get_object(BUCKET_NAME, object_path)
             return StreamingResponse(
-                response_data.stream(),
+                stream_generator(response_data),
                 media_type="video/mp4",
                 headers={
                     "Accept-Ranges": "bytes",
