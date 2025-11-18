@@ -8,6 +8,7 @@ to process video clips using ffmpeg with GPU acceleration.
 import kopf
 import kubernetes
 import logging
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 # Configure logging
@@ -135,7 +136,7 @@ def create_clip_job(spec: Dict[str, Any], name: str, namespace: str, **kwargs):
         return {
             'phase': 'Pending',
             'jobName': job_name,
-            'startTime': kopf.datetime.datetime.now(kopf.datetime.timezone.utc).isoformat(),
+            'startTime': datetime.now(timezone.utc).isoformat(),
         }
     except kubernetes.client.exceptions.ApiException as e:
         logger.error(f"Failed to create Job: {e}")
@@ -178,9 +179,9 @@ def update_clipjob_status(namespace: str, name: str, phase: str, message: str = 
     if message:
         status['message'] = message
     if phase in ['Succeeded', 'Failed']:
-        status['completionTime'] = kopf.datetime.datetime.now(kopf.datetime.timezone.utc).isoformat()
+        status['completionTime'] = datetime.now(timezone.utc).isoformat()
     elif phase == 'Running':
-        status['startTime'] = kopf.datetime.datetime.now(kopf.datetime.timezone.utc).isoformat()
+        status['startTime'] = datetime.now(timezone.utc).isoformat()
 
     try:
         api.patch_namespaced_custom_object_status(
