@@ -20,9 +20,11 @@ spec:
     remediation:
       retries: 3
   upgrade:
-    force: true
+    force: false
+    preserveValues: true
     remediation:
       retries: 3
+      strategy: rollback
   # Values from helm/values.yaml are used by default
   # You can override them here if needed for environment-specific configs
   valuesFrom:
