@@ -86,7 +86,7 @@ def create_clip_job(spec: Dict[str, Any], name: str, namespace: str, **kwargs):
                                 "valueFrom": {
                                     "secretKeyRef": {
                                         "name": minio_secret,
-                                        "key": "access-key"
+                                        "key": "rootUser"
                                     }
                                 }
                             },
@@ -95,7 +95,7 @@ def create_clip_job(spec: Dict[str, Any], name: str, namespace: str, **kwargs):
                                 "valueFrom": {
                                     "secretKeyRef": {
                                         "name": minio_secret,
-                                        "key": "secret-key"
+                                        "key": "rootPassword"
                                     }
                                 }
                             },
