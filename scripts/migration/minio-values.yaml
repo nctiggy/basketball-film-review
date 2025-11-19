@@ -1,0 +1,35 @@
+# Standalone MinIO deployment values
+# Matches existing sub-chart configuration
+
+mode: standalone
+
+rootUser: minioadmin
+rootPassword: minioadmin
+
+persistence:
+  enabled: true
+  size: 400Gi
+  storageClass: "spectro-storage-class"
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+service:
+  type: ClusterIP
+  port: 9000
+
+consoleService:
+  enabled: true
+  type: ClusterIP
+  port: 9001
+
+# Create default bucket
+buckets:
+  - name: basketball-clips
+    policy: none
+    purge: false

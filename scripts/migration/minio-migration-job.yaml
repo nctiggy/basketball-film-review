@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-migration
+  namespace: film-review
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Configuring source (old MinIO)..."
+              mc alias set old http://basketball-film-review-minio:9000 minioadmin minioadmin
+
+              echo "Configuring destination (new MinIO)..."
+              mc alias set new http://minio:9000 minioadmin minioadmin
+
+              echo "Creating bucket on new MinIO if it doesn't exist..."
+              mc mb new/basketball-clips --ignore-existing
+
+              echo "Starting mirror from old to new..."
+              mc mirror --preserve old/basketball-clips new/basketball-clips
+
+              echo "Verifying migration..."
+              echo "=== Old MinIO ==="
+              mc ls old/basketball-clips --recursive --summarize
+
+              echo "=== New MinIO ==="
+              mc ls new/basketball-clips --recursive --summarize
+
+              echo "Migration completed!"

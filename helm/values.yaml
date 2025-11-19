@@ -31,9 +31,9 @@ backend:
   
   env:
     - name: DATABASE_URL
-      value: "postgresql://filmreview:filmreview@basketball-film-review-postgresql:5432/filmreview"
+      value: "postgresql://filmreview:filmreview@postgresql:5432/filmreview"
     - name: MINIO_ENDPOINT
-      value: "basketball-film-review-minio:9000"
+      value: "minio:9000"
     - name: MINIO_ACCESS_KEY
       value: "minioadmin"
     - name: MINIO_SECRET_KEY
@@ -67,8 +67,9 @@ app:
   name: basketball-film-review
 
 # PostgreSQL configuration (Bitnami chart)
+# DISABLED: Migrated to standalone deployment
 postgresql:
-  enabled: true
+  enabled: false
   image:
     registry: docker.io
     repository: library/postgres
@@ -92,8 +93,9 @@ postgresql:
         memory: 256Mi
 
 # MinIO configuration (MinIO chart)
+# DISABLED: Migrated to standalone deployment
 minio:
-  enabled: true
+  enabled: false
   mode: standalone
 
   rootUser: minioadmin
