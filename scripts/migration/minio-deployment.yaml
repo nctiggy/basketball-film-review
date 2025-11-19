@@ -8,19 +8,7 @@ type: Opaque
 stringData:
   root-user: "minioadmin"
   root-password: "minioadmin"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: minio-data
-  namespace: film-review
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: "spectro-storage-class"
-  resources:
-    requests:
-      storage: 400Gi
+# PVC removed - using existing basketball-film-review-minio PVC
 ---
 apiVersion: v1
 kind: Service
@@ -72,7 +60,7 @@ spec:
           image: minio/minio:RELEASE.2024-11-07T00-52-20Z
           args:
             - server
-            - /data
+            - /export
             - --console-address
             - ":9001"
           ports:
@@ -100,7 +88,7 @@ spec:
               memory: 512Mi
           volumeMounts:
             - name: data
-              mountPath: /data
+              mountPath: /export
           livenessProbe:
             httpGet:
               path: /minio/health/live
@@ -116,4 +104,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: minio-data
+            claimName: basketball-film-review-minio
