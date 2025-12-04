@@ -35,7 +35,7 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
     clip_path = spec['clipPath']
     home_team_color = spec['homeTeamColor']
     away_team_color = spec['awayTeamColor']
-    fps = spec.get('framesPerSecond', 2.0)
+    fps = spec.get('framesPerSecond', 4.0)
     minio_endpoint = spec.get('minioEndpoint', 'minio:9000')
     minio_secret_ref = spec.get('minioSecretRef', {'name': 'basketball-film-review-minio-credentials'})
     anthropic_secret_ref = spec.get('anthropicSecretRef', {'name': 'anthropic-api-key'})
