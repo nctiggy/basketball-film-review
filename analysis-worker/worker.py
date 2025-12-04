@@ -24,7 +24,7 @@ GAME_ID = os.environ['GAME_ID']
 CLIP_PATH = os.environ['CLIP_PATH']
 HOME_TEAM_COLOR = os.environ['HOME_TEAM_COLOR']
 AWAY_TEAM_COLOR = os.environ['AWAY_TEAM_COLOR']
-FRAMES_PER_SECOND = float(os.environ.get('FRAMES_PER_SECOND', '2.0'))
+FRAMES_PER_SECOND = float(os.environ.get('FRAMES_PER_SECOND', '4.0'))
 MINIO_ENDPOINT = os.environ['MINIO_ENDPOINT']
 MINIO_BUCKET = os.environ.get('MINIO_BUCKET', 'basketball-clips')
 MINIO_ACCESS_KEY = os.environ['MINIO_ACCESS_KEY']
@@ -94,26 +94,47 @@ def analyze_with_claude(frames: list, home_color: str, away_color: str) -> dict:
     # Build the message content
     content = []
 
-    # Add instruction text
+    # Add instruction text with improved prompt
     content.append({
         "type": "text",
-        "text": f"""You are analyzing a basketball game clip. The frames below are in chronological order at approximately {FRAMES_PER_SECOND} frames per second.
+        "text": f"""You are an expert basketball analyst reviewing game footage frame by frame. The frames below are in chronological order at approximately {FRAMES_PER_SECOND} frames per second.
 
-Team identification:
-- HOME team is wearing {home_color} jerseys
-- AWAY team is wearing {away_color} jerseys
+TEAM IDENTIFICATION (CRITICAL - identify jersey colors first):
+- HOME team is wearing {home_color} jerseys/uniforms
+- AWAY team is wearing {away_color} jerseys/uniforms
 
-Please analyze these frames and count:
-1. Shot attempts by each team (any time a player shoots toward the basket)
-2. Shots made (ball goes through the hoop) vs missed
-3. Offensive rebounds (team retrieves their own missed shot)
-4. Defensive rebounds (team retrieves opponent's missed shot)
+YOUR TASK: Count basketball actions for EACH TEAM separately.
 
-Focus on TEAM-level statistics, not individual players. Watch carefully for:
-- The ball trajectory toward the basket
-- Whether shots go in or miss
-- Who secures the ball after a missed shot
-- Look for second chance opportunities after offensive rebounds
+WHAT COUNTS AS A SHOT ATTEMPT:
+- A player releasing the ball toward the basket with shooting motion
+- Layups, jump shots, three-pointers, and tip-ins ALL count as shot attempts
+- Watch for: arm extension toward basket, ball trajectory toward rim, shooting form
+- IMPORTANT: If you see the same shot attempt across multiple frames, count it ONCE
+
+WHAT COUNTS AS A MADE SHOT:
+- Ball clearly goes through the net/hoop
+- Watch for: ball dropping through net, ball below rim after being above it
+
+WHAT COUNTS AS A MISSED SHOT:
+- Shot attempt where ball hits rim/backboard and bounces away, or misses entirely
+- After a miss, watch who gets the rebound
+
+OFFENSIVE REBOUND:
+- The team that SHOT and MISSED gets the ball back
+- This often leads to another shot attempt (second chance)
+- Watch for: players from shooting team grabbing ball after miss
+
+DEFENSIVE REBOUND:
+- The OPPOSING team (defenders) gets the ball after a missed shot
+- Watch for: defenders boxing out and securing the ball
+
+ANALYSIS APPROACH:
+1. First, identify which team has the ball in each frame
+2. Track ball movement toward the basket
+3. Note every shooting motion you see
+4. After each shot, determine: made or missed?
+5. After each miss, determine: who got the rebound?
+6. Count second/third chance shots as ADDITIONAL shot attempts
 
 Here are the frames from the clip:"""
     })
@@ -133,13 +154,24 @@ Here are the frames from the clip:"""
             }
         })
 
-    # Add the request for structured output
+    # Add the request for structured output with chain-of-thought
     content.append({
         "type": "text",
         "text": """
 
-Based on your analysis of all frames above, provide your response in this exact JSON format:
+Now, analyze what you saw in these frames. Think through it step by step:
+
+1. JERSEY COLORS: What colors did you observe for each team?
+2. POSSESSION TRACKING: Which team had the ball and when did possession change?
+3. SHOT-BY-SHOT BREAKDOWN: For each shot attempt you observed:
+   - Which team took the shot?
+   - What type of shot (layup, jumper, etc.)?
+   - Did it go in or miss?
+   - If missed, who got the rebound?
+
+After your analysis, provide your final counts in this exact JSON format:
 {
+    "analysis_reasoning": "Your step-by-step breakdown of what you observed",
     "home_team": {
         "shots_attempted": 0,
         "shots_made": 0,
@@ -152,18 +184,18 @@ Based on your analysis of all frames above, provide your response in this exact 
         "offensive_rebounds": 0,
         "defensive_rebounds": 0
     },
-    "play_description": "Brief description of what happened in this clip",
-    "confidence": "high/medium/low - how confident are you in this analysis",
-    "notes": "Any issues or uncertainties in the analysis"
+    "play_description": "Brief summary of what happened in this clip",
+    "confidence": "high/medium/low",
+    "notes": "Any issues with video quality, camera angle, or uncertainty"
 }
 
-Return ONLY the JSON, no other text."""
+Provide your reasoning first, then the JSON."""
     })
 
     # Call Claude API
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1024,
+        max_tokens=2048,
         messages=[
             {"role": "user", "content": content}
         ]
@@ -179,14 +211,46 @@ Return ONLY the JSON, no other text."""
     print(f"API Usage: {input_tokens} input tokens, {output_tokens} output tokens")
     print(f"Estimated cost: ${cost:.4f}")
 
-    # Parse response
+    # Parse response - extract JSON from the response which may include reasoning text
     try:
-        json_text = response_text.strip()
-        if json_text.startswith("```"):
+        # Print the full response for debugging
+        print(f"\n--- Claude Response ---\n{response_text}\n--- End Response ---\n")
+
+        # Find JSON in the response (it may be preceded by reasoning text)
+        json_start = response_text.find('{')
+        json_end = response_text.rfind('}') + 1
+
+        if json_start == -1 or json_end == 0:
+            raise ValueError("No JSON found in response")
+
+        json_text = response_text[json_start:json_end]
+
+        # Clean up any markdown code blocks
+        if "```" in json_text:
+            # Extract content between code blocks
             lines = json_text.split("\n")
-            json_text = "\n".join(lines[1:-1])
+            cleaned_lines = []
+            in_code_block = False
+            for line in lines:
+                if line.strip().startswith("```"):
+                    in_code_block = not in_code_block
+                    continue
+                cleaned_lines.append(line)
+            json_text = "\n".join(cleaned_lines)
+            # Re-find JSON boundaries
+            json_start = json_text.find('{')
+            json_end = json_text.rfind('}') + 1
+            json_text = json_text[json_start:json_end]
+
         analysis = json.loads(json_text)
-    except json.JSONDecodeError as e:
+
+        # Store reasoning in notes if present
+        if 'analysis_reasoning' in analysis:
+            reasoning = analysis.pop('analysis_reasoning')
+            existing_notes = analysis.get('notes', '') or ''
+            analysis['notes'] = f"{reasoning}\n\n{existing_notes}".strip() if existing_notes else reasoning
+
+    except (json.JSONDecodeError, ValueError) as e:
         print(f"Error parsing JSON response: {e}")
         print(f"Raw response: {response_text}")
         analysis = {
