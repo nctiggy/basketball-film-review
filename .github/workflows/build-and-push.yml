@@ -42,6 +42,10 @@ jobs:
               - 'clip-operator/src/**'
             clip-worker:
               - 'clip-operator/worker/**'
+            analysis-operator:
+              - 'analysis-operator/**'
+            analysis-worker:
+              - 'analysis-worker/**'
 
       - name: Get latest tag
         id: get_tag
@@ -206,6 +210,64 @@ jobs:
           tags: |
             ${{ env.IMAGE_REGISTRY }}/clip-processor:latest
           cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/clip-processor:latest
+          cache-to: type=inline
+
+  build-analysis-operator:
+    needs: determine-version
+    if: needs.determine-version.outputs.analysis-operator_changed == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push analysis-operator
+        uses: docker/build-push-action@v5
+        with:
+          context: ./analysis-operator
+          file: ./analysis-operator/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/basketball-film-review-analysis-operator:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/basketball-film-review-analysis-operator:latest
+          cache-to: type=inline
+
+  build-analysis-worker:
+    needs: determine-version
+    if: needs.determine-version.outputs.analysis-worker_changed == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push analysis-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./analysis-worker
+          file: ./analysis-worker/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_REGISTRY }}/basketball-film-review-analysis-worker:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_REGISTRY }}/basketball-film-review-analysis-worker:latest
           cache-to: type=inline
 
   update-helm-values:

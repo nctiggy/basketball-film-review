@@ -7,8 +7,8 @@ metadata:
     component: backend
 rules:
 - apiGroups: ["filmreview.io"]
-  resources: ["clipjobs"]
+  resources: ["clipjobs", "analysisjobs"]
   verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
 - apiGroups: ["filmreview.io"]
-  resources: ["clipjobs/status"]
+  resources: ["clipjobs/status", "analysisjobs/status"]
   verbs: ["get", "update", "patch"]

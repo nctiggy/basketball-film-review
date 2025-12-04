@@ -181,3 +181,30 @@ cloudflared:
     requests:
       cpu: 50m
       memory: 64Mi
+
+# Analysis Operator configuration (Claude Vision AI analysis)
+analysisOperator:
+  enabled: true
+
+  # Anthropic API key for Claude Vision
+  # Set this value or create the secret manually
+  anthropicApiKey: ""
+
+  image:
+    repository: nctiggy/basketball-film-review-analysis-operator
+    tag: latest
+    pullPolicy: Always
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Analysis Worker configuration
+analysisWorker:
+  image:
+    repository: nctiggy/basketball-film-review-analysis-worker
+    tag: latest

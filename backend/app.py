@@ -63,8 +63,29 @@ async def lifespan(app: FastAPI):
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 name VARCHAR(255) NOT NULL,
                 date DATE NOT NULL,
+                home_team_color VARCHAR(50) DEFAULT 'white',
+                away_team_color VARCHAR(50) DEFAULT 'dark',
                 created_at TIMESTAMP DEFAULT NOW()
             )
+        """)
+
+        # Add team color columns to existing games table if they don't exist
+        await conn.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='games' AND column_name='home_team_color'
+                ) THEN
+                    ALTER TABLE games ADD COLUMN home_team_color VARCHAR(50) DEFAULT 'white';
+                END IF;
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='games' AND column_name='away_team_color'
+                ) THEN
+                    ALTER TABLE games ADD COLUMN away_team_color VARCHAR(50) DEFAULT 'dark';
+                END IF;
+            END $$;
         """)
 
         await conn.execute("""
@@ -105,6 +126,29 @@ async def lifespan(app: FastAPI):
                 END IF;
             END $$;
         """)
+
+        # Create clip_analyses table for AI analysis results
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_analyses (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE UNIQUE,
+                home_shots_attempted INTEGER DEFAULT 0,
+                home_shots_made INTEGER DEFAULT 0,
+                home_offensive_rebounds INTEGER DEFAULT 0,
+                home_defensive_rebounds INTEGER DEFAULT 0,
+                away_shots_attempted INTEGER DEFAULT 0,
+                away_shots_made INTEGER DEFAULT 0,
+                away_offensive_rebounds INTEGER DEFAULT 0,
+                away_defensive_rebounds INTEGER DEFAULT 0,
+                play_description TEXT,
+                confidence VARCHAR(20),
+                notes TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                error_message TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+        """)
     
     yield
     
@@ -126,11 +170,15 @@ app.add_middleware(
 class GameCreate(BaseModel):
     name: str
     date: str
+    home_team_color: Optional[str] = "white"
+    away_team_color: Optional[str] = "dark"
 
 class Game(BaseModel):
     id: str
     name: str
     date: date
+    home_team_color: str
+    away_team_color: str
     created_at: datetime
     video_count: Optional[int] = 0
 
@@ -162,6 +210,25 @@ class Clip(BaseModel):
     clip_path: Optional[str]
     status: str
     created_at: datetime
+
+class ClipAnalysis(BaseModel):
+    id: str
+    clip_id: str
+    home_shots_attempted: int
+    home_shots_made: int
+    home_offensive_rebounds: int
+    home_defensive_rebounds: int
+    away_shots_attempted: int
+    away_shots_made: int
+    away_offensive_rebounds: int
+    away_defensive_rebounds: int
+    play_description: Optional[str]
+    confidence: Optional[str]
+    notes: Optional[str]
+    status: str
+    error_message: Optional[str]
+    created_at: datetime
+    completed_at: Optional[datetime]
 
 # Helper functions
 def get_minio_client():
@@ -332,7 +399,9 @@ async def health():
 @app.post("/games", response_model=Game)
 async def create_game(
     name: str = Form(...),
-    date: str = Form(...)
+    date: str = Form(...),
+    home_team_color: str = Form("white"),
+    away_team_color: str = Form("dark")
 ):
     """Create a new game"""
     # Parse date string to date object
@@ -347,17 +416,19 @@ async def create_game(
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            INSERT INTO games (id, name, date)
-            VALUES ($1, $2, $3)
-            RETURNING id, name, date, created_at
+            INSERT INTO games (id, name, date, home_team_color, away_team_color)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, name, date, home_team_color, away_team_color, created_at
             """,
-            uuid.UUID(game_id), name, game_date
+            uuid.UUID(game_id), name, game_date, home_team_color, away_team_color
         )
 
     return {
         "id": str(row["id"]),
         "name": row["name"],
         "date": row["date"],
+        "home_team_color": row["home_team_color"],
+        "away_team_color": row["away_team_color"],
         "created_at": row["created_at"],
         "video_count": 0
     }
@@ -523,10 +594,10 @@ async def list_games():
     """List all games"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT g.id, g.name, g.date, g.created_at, COUNT(v.id) as video_count
+            SELECT g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at, COUNT(v.id) as video_count
             FROM games g
             LEFT JOIN videos v ON g.id = v.game_id
-            GROUP BY g.id, g.name, g.date, g.created_at
+            GROUP BY g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at
             ORDER BY g.date DESC
         """)
 
@@ -535,6 +606,8 @@ async def list_games():
             "id": str(row["id"]),
             "name": row["name"],
             "date": row["date"],
+            "home_team_color": row["home_team_color"] or "white",
+            "away_team_color": row["away_team_color"] or "dark",
             "created_at": row["created_at"],
             "video_count": row["video_count"]
         }
@@ -547,11 +620,11 @@ async def get_game(game_id: str):
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            SELECT g.id, g.name, g.date, g.created_at, COUNT(v.id) as video_count
+            SELECT g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at, COUNT(v.id) as video_count
             FROM games g
             LEFT JOIN videos v ON g.id = v.game_id
             WHERE g.id = $1
-            GROUP BY g.id, g.name, g.date, g.created_at
+            GROUP BY g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at
             """,
             uuid.UUID(game_id)
         )
@@ -563,6 +636,8 @@ async def get_game(game_id: str):
         "id": str(row["id"]),
         "name": row["name"],
         "date": row["date"],
+        "home_team_color": row["home_team_color"] or "white",
+        "away_team_color": row["away_team_color"] or "dark",
         "created_at": row["created_at"],
         "video_count": row["video_count"]
     }
@@ -571,7 +646,9 @@ async def get_game(game_id: str):
 async def update_game(
     game_id: str,
     name: str = Form(...),
-    date: str = Form(...)
+    date: str = Form(...),
+    home_team_color: str = Form("white"),
+    away_team_color: str = Form("dark")
 ):
     """Update a game"""
     try:
@@ -583,11 +660,11 @@ async def update_game(
         row = await conn.fetchrow(
             """
             UPDATE games
-            SET name = $1, date = $2
-            WHERE id = $3
-            RETURNING id, name, date, created_at
+            SET name = $1, date = $2, home_team_color = $3, away_team_color = $4
+            WHERE id = $5
+            RETURNING id, name, date, home_team_color, away_team_color, created_at
             """,
-            name, game_date, uuid.UUID(game_id)
+            name, game_date, home_team_color, away_team_color, uuid.UUID(game_id)
         )
 
         if not row:
@@ -603,6 +680,8 @@ async def update_game(
         "id": str(row["id"]),
         "name": row["name"],
         "date": row["date"],
+        "home_team_color": row["home_team_color"],
+        "away_team_color": row["away_team_color"],
         "created_at": row["created_at"],
         "video_count": video_count
     }
@@ -929,6 +1008,203 @@ async def get_players():
         )
 
     return [row["player"] for row in rows]
+
+
+# Analysis endpoints
+async def create_analysisjob(clip_id: str, game_id: str, clip_path: str, home_team_color: str, away_team_color: str):
+    """Create an AnalysisJob custom resource for the operator to process"""
+    try:
+        # Create Kubernetes API client
+        custom_api = client.CustomObjectsApi()
+
+        # Define the AnalysisJob resource
+        analysisjob = {
+            "apiVersion": "filmreview.io/v1alpha1",
+            "kind": "AnalysisJob",
+            "metadata": {
+                "name": f"analysis-{clip_id[:8]}",
+                "namespace": "film-review"
+            },
+            "spec": {
+                "clipId": clip_id,
+                "gameId": game_id,
+                "clipPath": clip_path,
+                "homeTeamColor": home_team_color,
+                "awayTeamColor": away_team_color,
+                "framesPerSecond": 2.0,
+                "ttlSecondsAfterFinished": 3600,
+                "backoffLimit": 2
+            }
+        }
+
+        # Create the AnalysisJob resource
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: custom_api.create_namespaced_custom_object(
+                group="filmreview.io",
+                version="v1alpha1",
+                namespace="film-review",
+                plural="analysisjobs",
+                body=analysisjob
+            )
+        )
+
+        print(f"Created AnalysisJob for clip {clip_id}")
+
+    except ApiException as e:
+        print(f"Error creating AnalysisJob for clip {clip_id}: {e}")
+        # Update analysis status to failed
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE clip_analyses SET status = 'failed', error_message = $1 WHERE clip_id = $2",
+                str(e), uuid.UUID(clip_id)
+            )
+    except Exception as e:
+        print(f"Unexpected error creating AnalysisJob for clip {clip_id}: {str(e)}")
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE clip_analyses SET status = 'failed', error_message = $1 WHERE clip_id = $2",
+                str(e), uuid.UUID(clip_id)
+            )
+
+
+@app.post("/clips/{clip_id}/analyze", response_model=ClipAnalysis)
+async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks):
+    """Start AI analysis of a clip"""
+    # Verify clip exists and is completed
+    async with db_pool.acquire() as conn:
+        clip = await conn.fetchrow(
+            "SELECT c.id, c.game_id, c.clip_path, c.status, g.home_team_color, g.away_team_color FROM clips c JOIN games g ON c.game_id = g.id WHERE c.id = $1",
+            uuid.UUID(clip_id)
+        )
+
+    if not clip:
+        raise HTTPException(status_code=404, detail="Clip not found")
+
+    if clip["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Clip is not ready for analysis. Status: {clip['status']}")
+
+    # Check if analysis already exists
+    async with db_pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT * FROM clip_analyses WHERE clip_id = $1",
+            uuid.UUID(clip_id)
+        )
+
+        if existing:
+            # If already completed or in progress, return it
+            if existing["status"] in ["completed", "processing"]:
+                return {
+                    "id": str(existing["id"]),
+                    "clip_id": str(existing["clip_id"]),
+                    "home_shots_attempted": existing["home_shots_attempted"],
+                    "home_shots_made": existing["home_shots_made"],
+                    "home_offensive_rebounds": existing["home_offensive_rebounds"],
+                    "home_defensive_rebounds": existing["home_defensive_rebounds"],
+                    "away_shots_attempted": existing["away_shots_attempted"],
+                    "away_shots_made": existing["away_shots_made"],
+                    "away_offensive_rebounds": existing["away_offensive_rebounds"],
+                    "away_defensive_rebounds": existing["away_defensive_rebounds"],
+                    "play_description": existing["play_description"],
+                    "confidence": existing["confidence"],
+                    "notes": existing["notes"],
+                    "status": existing["status"],
+                    "error_message": existing["error_message"],
+                    "created_at": existing["created_at"],
+                    "completed_at": existing["completed_at"]
+                }
+            # If failed or pending, delete and recreate
+            await conn.execute("DELETE FROM clip_analyses WHERE clip_id = $1", uuid.UUID(clip_id))
+
+        # Create new analysis record
+        row = await conn.fetchrow(
+            """
+            INSERT INTO clip_analyses (clip_id, status)
+            VALUES ($1, 'pending')
+            RETURNING *
+            """,
+            uuid.UUID(clip_id)
+        )
+
+    # Create AnalysisJob for async processing via operator
+    background_tasks.add_task(
+        create_analysisjob,
+        clip_id,
+        str(clip["game_id"]),
+        clip["clip_path"],
+        clip["home_team_color"] or "white",
+        clip["away_team_color"] or "dark"
+    )
+
+    return {
+        "id": str(row["id"]),
+        "clip_id": str(row["clip_id"]),
+        "home_shots_attempted": row["home_shots_attempted"],
+        "home_shots_made": row["home_shots_made"],
+        "home_offensive_rebounds": row["home_offensive_rebounds"],
+        "home_defensive_rebounds": row["home_defensive_rebounds"],
+        "away_shots_attempted": row["away_shots_attempted"],
+        "away_shots_made": row["away_shots_made"],
+        "away_offensive_rebounds": row["away_offensive_rebounds"],
+        "away_defensive_rebounds": row["away_defensive_rebounds"],
+        "play_description": row["play_description"],
+        "confidence": row["confidence"],
+        "notes": row["notes"],
+        "status": row["status"],
+        "error_message": row["error_message"],
+        "created_at": row["created_at"],
+        "completed_at": row["completed_at"]
+    }
+
+
+@app.get("/clips/{clip_id}/analysis", response_model=ClipAnalysis)
+async def get_clip_analysis(clip_id: str):
+    """Get the analysis results for a clip"""
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM clip_analyses WHERE clip_id = $1",
+            uuid.UUID(clip_id)
+        )
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Analysis not found for this clip")
+
+    return {
+        "id": str(row["id"]),
+        "clip_id": str(row["clip_id"]),
+        "home_shots_attempted": row["home_shots_attempted"],
+        "home_shots_made": row["home_shots_made"],
+        "home_offensive_rebounds": row["home_offensive_rebounds"],
+        "home_defensive_rebounds": row["home_defensive_rebounds"],
+        "away_shots_attempted": row["away_shots_attempted"],
+        "away_shots_made": row["away_shots_made"],
+        "away_offensive_rebounds": row["away_offensive_rebounds"],
+        "away_defensive_rebounds": row["away_defensive_rebounds"],
+        "play_description": row["play_description"],
+        "confidence": row["confidence"],
+        "notes": row["notes"],
+        "status": row["status"],
+        "error_message": row["error_message"],
+        "created_at": row["created_at"],
+        "completed_at": row["completed_at"]
+    }
+
+
+@app.delete("/clips/{clip_id}/analysis")
+async def delete_clip_analysis(clip_id: str):
+    """Delete analysis for a clip"""
+    async with db_pool.acquire() as conn:
+        result = await conn.execute(
+            "DELETE FROM clip_analyses WHERE clip_id = $1",
+            uuid.UUID(clip_id)
+        )
+
+        if result == "DELETE 0":
+            raise HTTPException(status_code=404, detail="Analysis not found for this clip")
+
+    return {"message": "Analysis deleted successfully"}
+
 
 if __name__ == "__main__":
     import uvicorn

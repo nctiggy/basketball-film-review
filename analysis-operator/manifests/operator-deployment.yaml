@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: analysis-operator
+  namespace: film-review
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: analysis-operator
+rules:
+# AnalysisJob CRD permissions
+- apiGroups: ["filmreview.io"]
+  resources: ["analysisjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["filmreview.io"]
+  resources: ["analysisjobs/status"]
+  verbs: ["get", "update", "patch"]
+# Job permissions
+- apiGroups: ["batch"]
+  resources: ["jobs", "jobs/status"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Pod permissions (for logs)
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+# Events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+# Kopf lease for leader election
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: analysis-operator
+subjects:
+- kind: ServiceAccount
+  name: analysis-operator
+  namespace: film-review
+roleRef:
+  kind: ClusterRole
+  name: analysis-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analysis-operator
+  namespace: film-review
+  labels:
+    app: analysis-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analysis-operator
+  template:
+    metadata:
+      labels:
+        app: analysis-operator
+    spec:
+      serviceAccountName: analysis-operator
+      containers:
+      - name: operator
+        image: nctiggy/basketball-film-review-analysis-operator:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"

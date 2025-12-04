@@ -1,0 +1,83 @@
+{{- if .Values.analysisOperator.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    component: analysis-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+rules:
+# AnalysisJob CRD permissions
+- apiGroups: ["filmreview.io"]
+  resources: ["analysisjobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["filmreview.io"]
+  resources: ["analysisjobs/status"]
+  verbs: ["get", "update", "patch"]
+# Job permissions
+- apiGroups: ["batch"]
+  resources: ["jobs", "jobs/status"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Pod permissions (for logs)
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch"]
+# Events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+# Kopf lease for leader election
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+  labels:
+    {{- include "basketball-film-review.labels" . | nindent 4 }}
+    component: analysis-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "basketball-film-review.selectorLabels" . | nindent 6 }}
+      component: analysis-operator
+  template:
+    metadata:
+      labels:
+        {{- include "basketball-film-review.selectorLabels" . | nindent 8 }}
+        component: analysis-operator
+    spec:
+      serviceAccountName: {{ include "basketball-film-review.fullname" . }}-analysis-operator
+      containers:
+      - name: operator
+        image: "{{ .Values.analysisOperator.image.repository }}:{{ .Values.analysisOperator.image.tag }}"
+        imagePullPolicy: {{ .Values.analysisOperator.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.analysisOperator.resources | nindent 10 }}
+{{- end }}
