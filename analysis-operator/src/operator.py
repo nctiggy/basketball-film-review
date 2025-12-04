@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Analysis Operator - Watches AnalysisJob CRDs and creates Kubernetes Jobs
-to analyze basketball clips using Claude Vision API.
+to analyze basketball clips using configurable AI providers.
+
+Supports multiple providers:
+- gemini: Google Gemini (native video understanding) - default
+- claude: Anthropic Claude (frame-by-frame analysis)
 """
 
 import kopf
@@ -36,14 +40,76 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
     home_team_color = spec['homeTeamColor']
     away_team_color = spec['awayTeamColor']
     fps = spec.get('framesPerSecond', 4.0)
+    clip_notes = spec.get('clipNotes', '')
+
+    # Provider selection - defaults to gemini for native video support
+    provider = spec.get('provider', 'gemini')
+
+    # Infrastructure config
     minio_endpoint = spec.get('minioEndpoint', 'minio:9000')
     minio_secret_ref = spec.get('minioSecretRef', {'name': 'basketball-film-review-minio-credentials'})
     anthropic_secret_ref = spec.get('anthropicSecretRef', {'name': 'anthropic-api-key'})
+    google_secret_ref = spec.get('googleSecretRef', {'name': 'google-api-key'})
     ttl_seconds = spec.get('ttlSecondsAfterFinished', 3600)
     backoff_limit = spec.get('backoffLimit', 2)
 
     # Create the Job spec
     job_name = f"analysis-{clip_id[:8]}"
+
+    # Build environment variables based on provider
+    env_vars = [
+        {'name': 'CLIP_ID', 'value': clip_id},
+        {'name': 'GAME_ID', 'value': game_id},
+        {'name': 'CLIP_PATH', 'value': clip_path},
+        {'name': 'HOME_TEAM_COLOR', 'value': home_team_color},
+        {'name': 'AWAY_TEAM_COLOR', 'value': away_team_color},
+        {'name': 'FRAMES_PER_SECOND', 'value': str(fps)},
+        {'name': 'CLIP_NOTES', 'value': clip_notes},
+        {'name': 'ANALYSIS_PROVIDER', 'value': provider},
+        {'name': 'MINIO_ENDPOINT', 'value': minio_endpoint},
+        {'name': 'MINIO_BUCKET', 'value': 'basketball-clips'},
+        {
+            'name': 'MINIO_ACCESS_KEY',
+            'valueFrom': {
+                'secretKeyRef': {
+                    'name': minio_secret_ref['name'],
+                    'key': 'rootUser'
+                }
+            }
+        },
+        {
+            'name': 'MINIO_SECRET_KEY',
+            'valueFrom': {
+                'secretKeyRef': {
+                    'name': minio_secret_ref['name'],
+                    'key': 'rootPassword'
+                }
+            }
+        },
+        {'name': 'DATABASE_URL', 'value': 'postgresql://filmreview:filmreview@postgresql:5432/filmreview'}
+    ]
+
+    # Add provider-specific API keys
+    if provider == 'claude':
+        env_vars.append({
+            'name': 'ANTHROPIC_API_KEY',
+            'valueFrom': {
+                'secretKeyRef': {
+                    'name': anthropic_secret_ref['name'],
+                    'key': 'api-key'
+                }
+            }
+        })
+    elif provider == 'gemini':
+        env_vars.append({
+            'name': 'GOOGLE_API_KEY',
+            'valueFrom': {
+                'secretKeyRef': {
+                    'name': google_secret_ref['name'],
+                    'key': 'api-key'
+                }
+            }
+        })
 
     job_manifest = {
         'apiVersion': 'batch/v1',
@@ -53,7 +119,8 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
             'namespace': namespace,
             'labels': {
                 'analysisjob': name,
-                'clip-id': clip_id[:8]
+                'clip-id': clip_id[:8],
+                'provider': provider
             },
             'ownerReferences': [{
                 'apiVersion': 'filmreview.io/v1alpha1',
@@ -71,7 +138,8 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
                 'metadata': {
                     'labels': {
                         'analysisjob': name,
-                        'clip-id': clip_id[:8]
+                        'clip-id': clip_id[:8],
+                        'provider': provider
                     }
                 },
                 'spec': {
@@ -80,44 +148,7 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
                         'name': 'analysis-worker',
                         'image': 'nctiggy/basketball-film-review-analysis-worker:latest',
                         'imagePullPolicy': 'Always',
-                        'env': [
-                            {'name': 'CLIP_ID', 'value': clip_id},
-                            {'name': 'GAME_ID', 'value': game_id},
-                            {'name': 'CLIP_PATH', 'value': clip_path},
-                            {'name': 'HOME_TEAM_COLOR', 'value': home_team_color},
-                            {'name': 'AWAY_TEAM_COLOR', 'value': away_team_color},
-                            {'name': 'FRAMES_PER_SECOND', 'value': str(fps)},
-                            {'name': 'MINIO_ENDPOINT', 'value': minio_endpoint},
-                            {'name': 'MINIO_BUCKET', 'value': 'basketball-clips'},
-                            {
-                                'name': 'MINIO_ACCESS_KEY',
-                                'valueFrom': {
-                                    'secretKeyRef': {
-                                        'name': minio_secret_ref['name'],
-                                        'key': 'rootUser'
-                                    }
-                                }
-                            },
-                            {
-                                'name': 'MINIO_SECRET_KEY',
-                                'valueFrom': {
-                                    'secretKeyRef': {
-                                        'name': minio_secret_ref['name'],
-                                        'key': 'rootPassword'
-                                    }
-                                }
-                            },
-                            {
-                                'name': 'ANTHROPIC_API_KEY',
-                                'valueFrom': {
-                                    'secretKeyRef': {
-                                        'name': anthropic_secret_ref['name'],
-                                        'key': 'api-key'
-                                    }
-                                }
-                            },
-                            {'name': 'DATABASE_URL', 'value': 'postgresql://filmreview:filmreview@postgresql:5432/filmreview'}
-                        ],
+                        'env': env_vars,
                         'resources': {
                             'requests': {
                                 'memory': '512Mi',
@@ -138,7 +169,7 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
     batch_api = kubernetes.client.BatchV1Api()
     try:
         batch_api.create_namespaced_job(namespace=namespace, body=job_manifest)
-        logger.info(f"Created Job {job_name} for AnalysisJob {name}")
+        logger.info(f"Created Job {job_name} for AnalysisJob {name} (provider: {provider})")
 
         # Update status
         update_analysisjob_status(namespace, name, 'Pending', job_name=job_name)

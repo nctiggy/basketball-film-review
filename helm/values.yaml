@@ -182,13 +182,20 @@ cloudflared:
       cpu: 50m
       memory: 64Mi
 
-# Analysis Operator configuration (Claude Vision AI analysis)
+# Analysis Operator configuration (AI-powered video analysis)
 analysisOperator:
   enabled: true
 
-  # Anthropic API key for Claude Vision
+  # Default AI provider for analysis: 'gemini' (native video) or 'claude' (frame-by-frame)
+  provider: gemini
+
+  # Anthropic API key for Claude Vision (required if provider=claude)
   # Set this value or create the secret manually
   anthropicApiKey: ""
+
+  # Google API key for Gemini (required if provider=gemini)
+  # Set this value or create the secret manually
+  googleApiKey: ""
 
   image:
     repository: nctiggy/basketball-film-review-analysis-operator

@@ -2,13 +2,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install ffmpeg
+# Install ffmpeg (still needed for Claude provider frame extraction)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-RUN pip install --no-cache-dir anthropic minio asyncpg
+# - anthropic: Claude API
+# - google-generativeai: Gemini API
+# - minio: Object storage client
+# - asyncpg: PostgreSQL async driver
+RUN pip install --no-cache-dir \
+    anthropic \
+    google-generativeai \
+    minio \
+    asyncpg
+
+# Copy provider modules
+COPY providers/ ./providers/
 
 # Copy worker code
 COPY worker.py .
