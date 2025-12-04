@@ -186,7 +186,10 @@ cloudflared:
 analysisOperator:
   enabled: true
 
-  # Default AI provider for analysis: 'gemini' (native video) or 'claude' (frame-by-frame)
+  # Default AI provider for analysis:
+  # - 'gemini': Google Gemini (native video understanding)
+  # - 'claude': Anthropic Claude (frame-by-frame)
+  # - 'qwen' or 'replicate-qwen': Qwen2-VL via Replicate (native video)
   provider: gemini
 
   # Anthropic API key for Claude Vision (required if provider=claude)
@@ -196,6 +199,10 @@ analysisOperator:
   # Google API key for Gemini (required if provider=gemini)
   # Set this value or create the secret manually
   googleApiKey: ""
+
+  # Replicate API token for Qwen2-VL (required if provider=qwen)
+  # Set this value or create the secret manually
+  replicateApiToken: ""
 
   image:
     repository: nctiggy/basketball-film-review-analysis-operator

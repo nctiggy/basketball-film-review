@@ -6,6 +6,7 @@ to analyze basketball clips using configurable AI providers.
 Supports multiple providers:
 - gemini: Google Gemini (native video understanding) - default
 - claude: Anthropic Claude (frame-by-frame analysis)
+- qwen/replicate-qwen: Qwen2-VL via Replicate (native video)
 """
 
 import kopf
@@ -50,6 +51,7 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
     minio_secret_ref = spec.get('minioSecretRef', {'name': 'basketball-film-review-minio-credentials'})
     anthropic_secret_ref = spec.get('anthropicSecretRef', {'name': 'anthropic-api-key'})
     google_secret_ref = spec.get('googleSecretRef', {'name': 'google-api-key'})
+    replicate_secret_ref = spec.get('replicateSecretRef', {'name': 'replicate-api-token'})
     ttl_seconds = spec.get('ttlSecondsAfterFinished', 3600)
     backoff_limit = spec.get('backoffLimit', 2)
 
@@ -107,6 +109,16 @@ def create_analysis_job(spec: Dict[str, Any], name: str, namespace: str, **kwarg
                 'secretKeyRef': {
                     'name': google_secret_ref['name'],
                     'key': 'api-key'
+                }
+            }
+        })
+    elif provider in ('qwen', 'replicate-qwen'):
+        env_vars.append({
+            'name': 'REPLICATE_API_TOKEN',
+            'valueFrom': {
+                'secretKeyRef': {
+                    'name': replicate_secret_ref['name'],
+                    'key': 'api-token'
                 }
             }
         })

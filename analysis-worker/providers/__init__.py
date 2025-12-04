@@ -8,11 +8,14 @@ to analyze basketball video clips.
 from .base import AnalysisProvider, AnalysisConfig, AnalysisResult
 from .claude import ClaudeProvider
 from .gemini import GeminiProvider
+from .replicate_qwen import ReplicateQwenProvider
 
 # Registry of available providers
 PROVIDERS = {
     'claude': ClaudeProvider,
     'gemini': GeminiProvider,
+    'replicate-qwen': ReplicateQwenProvider,
+    'qwen': ReplicateQwenProvider,  # Alias for convenience
 }
 
 
@@ -43,6 +46,7 @@ __all__ = [
     'AnalysisResult',
     'ClaudeProvider',
     'GeminiProvider',
+    'ReplicateQwenProvider',
     'get_provider',
     'PROVIDERS',
 ]

@@ -10,11 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies
 # - anthropic: Claude API
 # - google-generativeai: Gemini API
+# - replicate: Replicate API (for Qwen2-VL, etc.)
 # - minio: Object storage client
 # - asyncpg: PostgreSQL async driver
 RUN pip install --no-cache-dir \
     anthropic \
     google-generativeai \
+    replicate \
     minio \
     asyncpg
 
