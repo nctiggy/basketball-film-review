@@ -1031,7 +1031,7 @@ async def create_analysisjob(clip_id: str, game_id: str, clip_path: str, home_te
                 "clipPath": clip_path,
                 "homeTeamColor": home_team_color,
                 "awayTeamColor": away_team_color,
-                "provider": "gemini",  # Use Gemini for native video understanding
+                "provider": "qwen",  # Use Qwen2-VL via Replicate for native video understanding
                 "framesPerSecond": 4.0,
                 "ttlSecondsAfterFinished": 3600,
                 "backoffLimit": 2
