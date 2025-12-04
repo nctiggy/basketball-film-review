@@ -126,14 +126,22 @@ TEAM IDENTIFICATION (CRITICAL):
 - HOME team is wearing {config.home_team_color} jerseys/uniforms
 - AWAY team is wearing {config.away_team_color} jerseys/uniforms
 {notes_section}
+IMPORTANT CONTEXT - FULL COURT GAME:
+This is a full-court basketball game. Each team ONLY shoots at ONE basket:
+- If you see shots at the same basket, they are from the SAME team
+- If a team misses and then shoots at the SAME basket again = OFFENSIVE REBOUND
+- If after a miss the ball goes to the OTHER end of the court = DEFENSIVE REBOUND
+- Use the basket location to help identify which team is shooting
+
 YOUR TASK: Watch the entire video and count basketball actions for EACH TEAM separately.
 
 WHAT TO COUNT:
 
 SHOT ATTEMPTS:
 - Any time a player releases the ball toward the basket with shooting intent
-- Includes: layups, jump shots, three-pointers, tip-ins, putbacks
-- Count each distinct shot attempt ONCE (even if you see it multiple times)
+- Includes: layups, jump shots, three-pointers, tip-ins, putbacks, hook shots
+- A putback after an offensive rebound counts as a NEW shot attempt
+- Count each distinct shot attempt ONCE
 
 MADE SHOTS:
 - Ball clearly goes through the hoop/net
@@ -141,22 +149,25 @@ MADE SHOTS:
 
 MISSED SHOTS:
 - Shot attempt that doesn't go in
-- Ball hits rim/backboard and bounces away, or misses entirely
+- Ball hits rim/backboard and bounces away, or airball
 
 OFFENSIVE REBOUNDS:
-- After a MISS, the SAME team that shot gets the ball back
-- This often leads to another shot attempt (putback)
+- After a MISS, if the SAME team shoots again at the SAME basket = they got an offensive rebound
+- Look for: tip-ins, putbacks, or second-chance shots
+- Each time a team gets another shot at the same basket after a miss = 1 offensive rebound
 
 DEFENSIVE REBOUNDS:
-- After a MISS, the OPPOSING team gets the ball
+- After a MISS, if the ball goes to the OTHER end of the court = defensive rebound
+- Or if the opposing team clearly gains possession
 
 ANALYSIS INSTRUCTIONS:
 1. Watch the ENTIRE video first to understand the full sequence
-2. Identify jersey colors and which team is which
-3. Track ball possession throughout
-4. Count each shot attempt and determine if made or missed
-5. After each miss, note who got the rebound
-6. Pay attention to quick sequences - multiple shot attempts can happen rapidly
+2. Identify which basket each team is shooting at based on jersey colors
+3. Count EVERY shot attempt at each basket
+4. After each miss, check: does the next shot go to the SAME basket or OPPOSITE?
+   - Same basket = offensive rebound for the shooting team
+   - Opposite basket = defensive rebound
+5. Pay close attention to rapid sequences - multiple shots in a row at the same basket indicates offensive rebounds
 
 Provide your analysis in this exact JSON format:
 {{
