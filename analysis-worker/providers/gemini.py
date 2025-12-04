@@ -27,8 +27,9 @@ class GeminiProvider(AnalysisProvider):
 
         genai.configure(api_key=self.api_key)
 
-        # Use Gemini 1.5 Pro for best video understanding, Flash for cost savings
-        model_name = os.environ.get('GEMINI_MODEL', 'gemini-1.5-pro')
+        # Use Gemini 2.0 Flash for video understanding (supports video natively)
+        # Can override with GEMINI_MODEL env var
+        model_name = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
         self.model = genai.GenerativeModel(model_name)
         self.model_name = model_name
 
