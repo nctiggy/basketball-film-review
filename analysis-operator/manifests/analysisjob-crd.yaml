@@ -36,6 +36,18 @@ spec:
                 awayTeamColor:
                   type: string
                   description: Color/description of away team jerseys
+                provider:
+                  type: string
+                  default: "gemini"
+                  description: AI provider to use (gemini, claude, qwen)
+                  enum:
+                    - gemini
+                    - claude
+                    - qwen
+                    - replicate-qwen
+                clipNotes:
+                  type: string
+                  description: Optional notes about the clip to help AI analysis
                 framesPerSecond:
                   type: number
                   default: 2.0
@@ -55,6 +67,20 @@ spec:
                   type: object
                   default:
                     name: anthropic-api-key
+                  properties:
+                    name:
+                      type: string
+                googleSecretRef:
+                  type: object
+                  default:
+                    name: google-api-key
+                  properties:
+                    name:
+                      type: string
+                replicateSecretRef:
+                  type: object
+                  default:
+                    name: replicate-api-token
                   properties:
                     name:
                       type: string
