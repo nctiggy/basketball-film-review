@@ -932,6 +932,25 @@
             transform: scale(1.1);
         }
 
+        /* Auth Modal Styles */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-overlay);
+            overflow: auto;
+        }
+
+        .auth-modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .video-container {
             width: 100%;
             background: #000;
@@ -2363,7 +2382,7 @@
                 </div>
 
                 <!-- Login Button (shown when not logged in) -->
-                <button id="loginButton" class="user-menu-button" onclick="showAuthModal('login')" style="display: none;">
+                <button id="loginButton" class="user-menu-button" onclick="showAuthModal('login')">
                     Sign In
                 </button>
             </div>
