@@ -644,10 +644,9 @@ async def create_game(
     name: str = Form(...),
     date: str = Form(...),
     home_team_color: str = Form("white"),
-    away_team_color: str = Form("dark"),
-    current_user: dict = Depends(get_current_user)
+    away_team_color: str = Form("dark")
 ):
-    """Create a new game - requires authentication"""
+    """Create a new game"""
     # Parse date string to date object
     try:
         game_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -680,10 +679,9 @@ async def create_game(
 @app.post("/games/{game_id}/videos", response_model=Video)
 async def upload_video(
     game_id: str,
-    video: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    video: UploadFile = File(...)
 ):
-    """Upload a video for a game - requires authentication"""
+    """Upload a video for a game"""
     # Verify game exists
     async with db_pool.acquire() as conn:
         game = await conn.fetchrow("SELECT id FROM games WHERE id = $1", uuid.UUID(game_id))
@@ -726,8 +724,8 @@ async def upload_video(
     }
 
 @app.get("/games/{game_id}/videos", response_model=List[Video])
-async def list_game_videos(game_id: str, current_user: dict = Depends(get_current_user)):
-    """List all videos for a game - requires authentication"""
+async def list_game_videos(game_id: str):
+    """List all videos for a game"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(
             "SELECT * FROM videos WHERE game_id = $1 ORDER BY uploaded_at DESC",
@@ -746,8 +744,8 @@ async def list_game_videos(game_id: str, current_user: dict = Depends(get_curren
     ]
 
 @app.get("/videos/{video_id}", response_model=Video)
-async def get_video(video_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a specific video - requires authentication"""
+async def get_video(video_id: str):
+    """Get a specific video"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM videos WHERE id = $1",
@@ -768,10 +766,9 @@ async def get_video(video_id: str, current_user: dict = Depends(get_current_user
 @app.put("/videos/{video_id}", response_model=Video)
 async def update_video(
     video_id: str,
-    filename: str = Form(...),
-    current_user: dict = Depends(get_current_user)
+    filename: str = Form(...)
 ):
-    """Update video metadata (filename only) - requires authentication"""
+    """Update video metadata (filename only)"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -795,7 +792,7 @@ async def update_video(
     }
 
 @app.delete("/videos/{video_id}")
-async def delete_video(video_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_video(video_id: str):
     """Delete a video and all associated clips - requires authentication"""
     async with db_pool.acquire() as conn:
         # Get video path
@@ -836,8 +833,8 @@ async def delete_video(video_id: str, current_user: dict = Depends(get_current_u
     return {"message": "Video deleted successfully"}
 
 @app.get("/games", response_model=List[Game])
-async def list_games(current_user: dict = Depends(get_current_user)):
-    """List all games - requires authentication"""
+async def list_games():
+    """List all games"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at, COUNT(v.id) as video_count
@@ -861,8 +858,8 @@ async def list_games(current_user: dict = Depends(get_current_user)):
     ]
 
 @app.get("/games/{game_id}", response_model=Game)
-async def get_game(game_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a specific game - requires authentication"""
+async def get_game(game_id: str):
+    """Get a specific game"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -894,10 +891,9 @@ async def update_game(
     name: str = Form(...),
     date: str = Form(...),
     home_team_color: str = Form("white"),
-    away_team_color: str = Form("dark"),
-    current_user: dict = Depends(get_current_user)
+    away_team_color: str = Form("dark")
 ):
-    """Update a game - requires authentication"""
+    """Update a game"""
     try:
         game_date = datetime.strptime(date, "%Y-%m-%d").date()
     except ValueError:
@@ -934,7 +930,7 @@ async def update_game(
     }
 
 @app.delete("/games/{game_id}")
-async def delete_game(game_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_game(game_id: str):
     """Delete a game and all associated videos and clips - requires authentication"""
     async with db_pool.acquire() as conn:
         # Get all video paths to delete from MinIO
@@ -976,7 +972,7 @@ async def delete_game(game_id: str, current_user: dict = Depends(get_current_use
     return {"message": "Game deleted successfully"}
 
 @app.get("/games/{game_id}/video")
-async def stream_game_video(game_id: str, current_user: dict = Depends(get_current_user)):
+async def stream_game_video(game_id: str):
     """Stream the first video for a game - requires authentication"""
     # Get the first video for this game
     async with db_pool.acquire() as conn:
@@ -1023,7 +1019,7 @@ async def stream_video(video_id: str, request: Request):
     return await stream_video_with_range(request, video_path, minio_client)
 
 @app.post("/clips", response_model=Clip)
-async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
     """Create a new clip from a game video - requires authentication"""
     # Verify video exists
     async with db_pool.acquire() as conn:
@@ -1080,7 +1076,7 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks, curre
     }
 
 @app.get("/clips", response_model=List[Clip])
-async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
     """List clips with optional filters - requires authentication"""
     query = "SELECT * FROM clips WHERE 1=1"
     params = []
@@ -1116,7 +1112,7 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None, c
     ]
 
 @app.get("/clips/{clip_id}", response_model=Clip)
-async def get_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+async def get_clip(clip_id: str):
     """Get a specific clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -1142,7 +1138,7 @@ async def get_clip(clip_id: str, current_user: dict = Depends(get_current_user))
     }
 
 @app.put("/clips/{clip_id}", response_model=Clip)
-async def update_clip(clip_id: str, clip: ClipCreate, current_user: dict = Depends(get_current_user)):
+async def update_clip(clip_id: str, clip: ClipCreate):
     """Update clip metadata (tags, players, notes, timestamps) - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -1231,7 +1227,7 @@ async def stream_clip(clip_id: str, request: Request, current_user: Optional[dic
     return await stream_video_with_range(request, row["clip_path"], minio_client)
 
 @app.get("/clips/{clip_id}/download")
-async def download_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+async def download_clip(clip_id: str):
     """Download a processed clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -1258,7 +1254,7 @@ async def download_clip(clip_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Clip file not found")
 
 @app.delete("/clips/{clip_id}")
-async def delete_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_clip(clip_id: str):
     """Delete a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -1286,7 +1282,7 @@ async def delete_clip(clip_id: str, current_user: dict = Depends(get_current_use
     return {"message": "Clip deleted successfully"}
 
 @app.get("/players")
-async def get_players(current_user: dict = Depends(get_current_user)):
+async def get_players():
     """Get all unique players from clips - requires authentication"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(
@@ -1357,7 +1353,7 @@ async def create_analysisjob(clip_id: str, game_id: str, clip_path: str, home_te
 
 
 @app.post("/clips/{clip_id}/analyze", response_model=ClipAnalysis)
-async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks):
     """Start AI analysis of a clip - requires authentication"""
     # Verify clip exists and is completed
     async with db_pool.acquire() as conn:
@@ -1446,7 +1442,7 @@ async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks, current_
 
 
 @app.get("/clips/{clip_id}/analysis", response_model=ClipAnalysis)
-async def get_clip_analysis(clip_id: str, current_user: dict = Depends(get_current_user)):
+async def get_clip_analysis(clip_id: str):
     """Get the analysis results for a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -1479,7 +1475,7 @@ async def get_clip_analysis(clip_id: str, current_user: dict = Depends(get_curre
 
 
 @app.delete("/clips/{clip_id}/analysis")
-async def delete_clip_analysis(clip_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_clip_analysis(clip_id: str):
     """Delete analysis for a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         result = await conn.execute(
