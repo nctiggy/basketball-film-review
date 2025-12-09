@@ -428,6 +428,176 @@
             background: #f5eeff;
         }
 
+        /* Assignment Badge Styles */
+        .assignment-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #3498db;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            min-width: 18px;
+        }
+
+        .assignment-badge.high {
+            background: #e74c3c;
+        }
+
+        .assignment-badge.low {
+            background: #95a5a6;
+        }
+
+        /* Assignment Modal Styles */
+        .player-select-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+        }
+
+        .player-select-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .player-select-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .player-select-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .player-select-item label {
+            cursor: pointer;
+            margin: 0;
+            font-weight: normal;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-jersey {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            min-width: 30px;
+        }
+
+        .priority-select {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .priority-option {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .priority-option:hover {
+            background: var(--bg-hover);
+        }
+
+        .priority-option.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .priority-option.high.selected {
+            border-color: #e74c3c;
+            background: #fee;
+            color: #e74c3c;
+        }
+
+        .priority-option.low.selected {
+            border-color: #95a5a6;
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+        .assignment-list {
+            margin-top: 15px;
+        }
+
+        .assignment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+
+        .assignment-item.high {
+            border-left-color: #e74c3c;
+        }
+
+        .assignment-item.low {
+            border-left-color: #95a5a6;
+        }
+
+        .assignment-info {
+            flex: 1;
+        }
+
+        .assignment-player-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .assignment-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .assignment-meta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .assignment-remove {
+            padding: 6px 12px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .assignment-remove:hover {
+            background: #c0392b;
+        }
+
         /* Analysis Status Styles */
         .analysis-status {
             display: inline-flex;
@@ -1048,6 +1218,7 @@
             font-size: 13px;
         }
     </style>
+    <script src="teams-management.js"></script>
 </head>
 <body>
     <header>
@@ -1176,8 +1347,11 @@
                     <div id="coachTeamsView" class="view-section">
                         <div class="section">
                             <h2>Teams Management</h2>
+                            <div style="margin-bottom: 20px;">
+                                <button onclick="showCreateTeamModal()" style="background: #27ae60;">+ Create New Team</button>
+                            </div>
                             <div id="coachTeamsContainer">
-                                <p style="color: var(--text-secondary);">Create and manage your teams, add coaches and players to rosters.</p>
+                                <p style="color: var(--text-secondary);">Loading teams...</p>
                             </div>
                         </div>
                     </div>
@@ -1559,6 +1733,7 @@
                         <div id="viewClipPlayers" style="margin-bottom: 8px; color: #3498db;"></div>
                         <div class="tags" id="viewClipTags" style="margin-bottom: 8px;"></div>
                         <div id="viewClipNotes" style="color: #666; font-size: 13px;"></div>
+                        <div id="viewClipAssignments" style="margin-top: 12px;"></div>
                     </div>
                 </div>
 
@@ -1757,6 +1932,234 @@
             </div>
             <div id="analysisResultsContent">
                 <!-- Content will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Team Modal -->
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Create New Team</h2>
+                <span class="modal-close" onclick="closeCreateTeamModal()">&times;</span>
+            </div>
+            <form onsubmit="handleCreateTeam(event)">
+                <div class="form-group">
+                    <label for="teamName">Team Name *</label>
+                    <input type="text" id="teamName" required placeholder="e.g., Varsity Boys">
+                </div>
+                <div class="form-group">
+                    <label for="teamSeason">Season</label>
+                    <input type="text" id="teamSeason" placeholder="e.g., 2024-2025">
+                </div>
+                <button type="submit" style="background: #27ae60;">Create Team</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Team Modal -->
+    <div id="editTeamModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Edit Team</h2>
+                <span class="modal-close" onclick="closeEditTeamModal()">&times;</span>
+            </div>
+            <form onsubmit="handleEditTeam(event)">
+                <input type="hidden" id="editTeamId">
+                <div class="form-group">
+                    <label for="editTeamName">Team Name *</label>
+                    <input type="text" id="editTeamName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editTeamSeason">Season</label>
+                    <input type="text" id="editTeamSeason">
+                </div>
+                <button type="submit">Update Team</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Team Detail Modal -->
+    <div id="teamDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 id="teamDetailTitle">Team Details</h2>
+                <span class="modal-close" onclick="closeTeamDetailModal()">&times;</span>
+            </div>
+            <div id="teamDetailContent">
+                <!-- Content will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Player Modal -->
+    <div id="addPlayerModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Add Player to Roster</h2>
+                <span class="modal-close" onclick="closeAddPlayerModal()">&times;</span>
+            </div>
+            <form onsubmit="handleAddPlayer(event)">
+                <input type="hidden" id="addPlayerTeamId">
+                <div class="form-group">
+                    <label for="playerName">Player Name *</label>
+                    <input type="text" id="playerName" required placeholder="e.g., John Smith">
+                </div>
+                <div class="form-group">
+                    <label for="playerJersey">Jersey Number</label>
+                    <input type="text" id="playerJersey" placeholder="e.g., 23">
+                </div>
+                <div class="form-group">
+                    <label for="playerPosition">Position</label>
+                    <input type="text" id="playerPosition" placeholder="e.g., Guard">
+                </div>
+                <div class="form-group">
+                    <label for="playerGradYear">Graduation Year</label>
+                    <input type="number" id="playerGradYear" placeholder="e.g., 2025">
+                </div>
+                <button type="submit" style="background: #27ae60;">Add Player</button>
+                <div id="addPlayerInviteCode" style="display: none; margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 4px;">
+                    <p style="margin-bottom: 10px; font-weight: 600; color: #27ae60;">Player Added Successfully!</p>
+                    <p style="margin-bottom: 5px; font-size: 13px; color: #555;">Share this invite code with the player:</p>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="inviteCodeDisplay" readonly style="flex: 1; font-family: monospace; background: white;">
+                        <button type="button" onclick="copyInviteCode()" style="background: #3498db;">Copy</button>
+                    </div>
+                    <p style="margin-top: 8px; font-size: 12px; color: #666;">The player can use this code to claim their account and set their credentials.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Invite Modal -->
+    <div id="createInviteModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Create Invite</h2>
+                <span class="modal-close" onclick="closeCreateInviteModal()">&times;</span>
+            </div>
+            <div id="createInviteMessage"></div>
+            <form id="createInviteForm">
+                <input type="hidden" id="inviteTeamId">
+                <div class="form-group">
+                    <label for="inviteRole">Role:</label>
+                    <select id="inviteRole" required onchange="handleInviteRoleChange()">
+                        <option value="">Select role...</option>
+                        <option value="player">Player</option>
+                        <option value="coach">Coach</option>
+                        <option value="parent">Parent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inviteTargetName">Pre-fill Name (Optional):</label>
+                    <input type="text" id="inviteTargetName" placeholder="e.g., John Smith">
+                    <small style="color: var(--text-tertiary); font-size: 12px;">If provided, this name will be pre-filled in the registration form</small>
+                </div>
+                <div class="form-group" id="invitePlayerLinkGroup" style="display: none;">
+                    <label for="inviteLinkedPlayer">Link to Player:</label>
+                    <select id="inviteLinkedPlayer">
+                        <option value="">Select player...</option>
+                    </select>
+                    <small style="color: var(--text-tertiary); font-size: 12px;">Required for parent invites</small>
+                </div>
+                <div class="form-group">
+                    <label for="inviteExpiresIn">Expires In:</label>
+                    <select id="inviteExpiresIn" required>
+                        <option value="7">7 days</option>
+                        <option value="14">14 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                    </select>
+                </div>
+                <button type="submit">Generate Invite</button>
+            </form>
+            <div id="inviteGeneratedSection" style="display: none; margin-top: 20px; padding: 20px; background: var(--bg-tertiary); border-radius: 8px;">
+                <h3 style="margin-bottom: 15px; color: #27ae60;">Invite Created Successfully!</h3>
+                <div class="form-group">
+                    <label>Invite Code:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="generatedInviteCode" readonly style="font-family: monospace; font-weight: bold; background: var(--input-bg);">
+                        <button type="button" onclick="copyInviteCode()" style="background: #27ae60; white-space: nowrap;">Copy Code</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Invite Link:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="generatedInviteLink" readonly style="font-family: monospace; font-size: 12px; background: var(--input-bg);">
+                        <button type="button" onclick="copyInviteLink()" style="background: #27ae60; white-space: nowrap;">Copy Link</button>
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);">
+                    Share this code or link with the person you want to invite. They can use it to register and join your team.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Preview/Claim Page (Public - shown when not logged in with invite code) -->
+    <div id="invitePreviewSection" style="display: none;">
+        <div class="container" style="max-width: 600px; margin-top: 60px;">
+            <div class="section">
+                <h2 style="text-align: center; margin-bottom: 30px;">You've Been Invited!</h2>
+                <div id="invitePreviewContent">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Clip Modal -->
+    <div id="assignClipModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Assign Clip to Players</h2>
+                <span class="modal-close" onclick="closeAssignClipModal()">&times;</span>
+            </div>
+            <div id="assignClipMessage" style="margin-bottom: 15px;"></div>
+
+            <div id="assignClipForm">
+                <div class="form-group">
+                    <label>Select Players:</label>
+                    <div id="playerSelectList" class="player-select-list">
+                        <p style="text-align: center; color: var(--text-tertiary);">Loading players...</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority Level:</label>
+                    <div class="priority-select">
+                        <div class="priority-option low" data-priority="low">
+                            <div style="font-size: 13px; font-weight: 600;">Low</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary);">Review when convenient</div>
+                        </div>
+                        <div class="priority-option selected" data-priority="normal">
+                            <div style="font-size: 13px; font-weight: 600;">Normal</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary);">Standard review</div>
+                        </div>
+                        <div class="priority-option high" data-priority="high">
+                            <div style="font-size: 13px; font-weight: 600;">High</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary);">Review ASAP</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="assignmentMessage">Message (Optional):</label>
+                    <textarea id="assignmentMessage" rows="3" placeholder="Add a note or instructions for the players..." style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--input-bg); color: var(--text-primary); resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-secondary" onclick="closeAssignClipModal()">Cancel</button>
+                    <button type="button" class="btn-primary" onclick="submitClipAssignment()" id="assignClipButton">Assign Clip</button>
+                </div>
+            </div>
+
+            <div id="currentAssignments" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--border-color);">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">Current Assignments</h3>
+                <div id="assignmentsList">
+                    <p style="text-align: center; color: var(--text-tertiary);">Loading assignments...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -2406,8 +2809,7 @@
                     console.log('Loading child stats...');
                     break;
                 case 'coachTeamsView':
-                    // TODO: Load coach teams
-                    console.log('Loading coach teams...');
+                    loadCoachTeams();
                     break;
                 case 'coachPlayersView':
                     // TODO: Load coach players
@@ -3229,6 +3631,9 @@
                 // Load player autocomplete suggestions
                 loadAndUpdatePlayerSuggestions();
 
+                // Fetch assignment counts for all clips
+                await fetchAssignmentCounts(clips.map(clip => clip.id));
+
                 const container = document.getElementById('gameClipsContainer');
                 if (clips.length === 0) {
                     container.innerHTML = '<p>No clips created yet.</p>';
@@ -3266,6 +3671,7 @@
                                     <td class="tags-cell">
                                         <div class="tags">
                                             ${clip.tags.map(tag => `<span class="tag clickable" onclick="event.stopPropagation(); filterByTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`).join('')}
+                                            ${getAssignmentBadge(clip.id)}
                                         </div>
                                     </td>
                                     <td class="notes-cell">${clip.notes || ''}</td>
@@ -3283,6 +3689,10 @@
                                                 </div>
                                                 <div class="clip-menu-item" onclick="showEditClipModal('${clip.id}')">
                                                     Edit
+                                                </div>
+                                                <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                     onclick="${clip.status === 'completed' ? `openAssignClipModal('${clip.id}')` : 'return false'}">
+                                                    Assign to Players
                                                 </div>
                                                 <div class="clip-menu-item analyze ${clip.status !== 'completed' ? 'disabled' : ''}"
                                                      onclick="${clip.status === 'completed' ? `analyzeClip('${clip.id}')` : 'return false'}">
@@ -3421,6 +3831,9 @@
                 // Load player autocomplete suggestions
                 loadAndUpdatePlayerSuggestions();
 
+                // Fetch assignment counts for all clips
+                await fetchAssignmentCounts(clips.map(clip => clip.id));
+
                 clipsListDiv.innerHTML = `
                 <table class="clips-table">
                     <thead>
@@ -3454,6 +3867,7 @@
                                 <td class="tags-cell">
                                     <div class="tags">
                                         ${clip.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                        ${getAssignmentBadge(clip.id)}
                                     </div>
                                 </td>
                                 <td class="notes-cell">${clip.notes || ''}</td>
@@ -3471,6 +3885,10 @@
                                             </div>
                                             <div class="clip-menu-item" onclick="showEditClipModal('${clip.id}')">
                                                 Edit
+                                            </div>
+                                            <div class="clip-menu-item ${clip.status !== 'completed' ? 'disabled' : ''}"
+                                                 onclick="${clip.status === 'completed' ? `openAssignClipModal('${clip.id}')` : 'return false'}">
+                                                Assign to Players
                                             </div>
                                             <div class="clip-menu-item analyze ${clip.status !== 'completed' ? 'disabled' : ''}"
                                                  onclick="${clip.status === 'completed' ? `analyzeClip('${clip.id}')` : 'return false'}">
@@ -4155,7 +4573,7 @@
             }
         }
 
-        function viewClip(clipId, startTime, endTime, tags, players, notes) {
+        async function viewClip(clipId, startTime, endTime, tags, players, notes) {
             // Set video source
             const videoSource = document.getElementById('viewClipSource');
             const video = document.getElementById('viewClipVideo');
@@ -4176,11 +4594,49 @@
             document.getElementById('viewClipTags').innerHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
             document.getElementById('viewClipNotes').innerHTML = notes ? notes : '';
 
+            // Load and display assignments
+            await displayClipAssignmentsInView(clipId);
+
             // Initialize custom video controls
             initializeCustomVideoControls();
 
             // Show modal
             document.getElementById('viewClipModal').style.display = 'block';
+        }
+
+        async function displayClipAssignmentsInView(clipId) {
+            const assignmentsEl = document.getElementById('viewClipAssignments');
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/clips/${clipId}/assignments`);
+                if (!response.ok) {
+                    assignmentsEl.innerHTML = '';
+                    return;
+                }
+
+                const assignments = await response.json();
+                if (assignments.length === 0) {
+                    assignmentsEl.innerHTML = '';
+                    return;
+                }
+
+                const assignmentsHtml = `
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 12px;">
+                        <strong style="font-size: 13px; color: var(--text-primary);">Assigned To:</strong>
+                        <div style="margin-top: 8px;">
+                            ${assignments.map(a => `
+                                <div style="display: inline-flex; align-items: center; margin: 4px 4px 4px 0; padding: 4px 8px; background: var(--bg-secondary); border-radius: 4px; border: 1px solid var(--border-color);">
+                                    <span style="font-size: 13px;">${a.player_name}</span>
+                                    ${a.priority !== 'normal' ? `<span class="assignment-badge ${a.priority}" style="margin-left: 6px;">${a.priority.toUpperCase()}</span>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                assignmentsEl.innerHTML = assignmentsHtml;
+            } catch (error) {
+                console.error('Error loading assignments for view:', error);
+                assignmentsEl.innerHTML = '';
+            }
         }
 
         function initializeCustomVideoControls() {
@@ -4503,6 +4959,291 @@
             });
         }
 
+        // ===== CLIP ASSIGNMENT FUNCTIONS =====
+        let currentAssignClipId = null;
+        let currentAssignClipTeamId = null;
+        let selectedPlayerIds = [];
+        let selectedPriority = 'normal';
+        let clipAssignmentCounts = {}; // Cache of clip_id -> assignment count
+
+        async function fetchAssignmentCounts(clipIds) {
+            // Fetch assignment counts for multiple clips
+            try {
+                const counts = {};
+                // For simplicity, we'll fetch assignments for each clip
+                // In a real app, you might create a batch endpoint
+                await Promise.all(clipIds.map(async (clipId) => {
+                    try {
+                        const response = await authenticatedFetch(`${API_BASE}/clips/${clipId}/assignments`);
+                        if (response.ok) {
+                            const assignments = await response.json();
+                            counts[clipId] = {
+                                count: assignments.length,
+                                hasHigh: assignments.some(a => a.priority === 'high')
+                            };
+                        }
+                    } catch (e) {
+                        // Silently fail for individual clips
+                        counts[clipId] = { count: 0, hasHigh: false };
+                    }
+                }));
+                clipAssignmentCounts = counts;
+            } catch (error) {
+                console.error('Error fetching assignment counts:', error);
+            }
+        }
+
+        function getAssignmentBadge(clipId) {
+            const info = clipAssignmentCounts[clipId];
+            if (!info || info.count === 0) return '';
+            const badgeClass = info.hasHigh ? 'high' : 'normal';
+            return `<span class="assignment-badge ${badgeClass}" title="${info.count} assignment${info.count > 1 ? 's' : ''}">${info.count}</span>`;
+        }
+
+        async function openAssignClipModal(clipId) {
+            // Close the clip menu
+            const menu = document.getElementById(`menu-${clipId}`);
+            if (menu) menu.classList.remove('show');
+
+            currentAssignClipId = clipId;
+            selectedPlayerIds = [];
+            selectedPriority = 'normal';
+
+            // Clear message
+            document.getElementById('assignClipMessage').innerHTML = '';
+            document.getElementById('assignmentMessage').value = '';
+
+            // Reset priority selection
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.priority === 'normal') {
+                    opt.classList.add('selected');
+                }
+            });
+
+            // Show modal
+            document.getElementById('assignClipModal').style.display = 'block';
+
+            // Load team and players
+            await loadClipTeamAndPlayers(clipId);
+
+            // Load current assignments
+            await loadClipAssignments(clipId);
+        }
+
+        function closeAssignClipModal() {
+            document.getElementById('assignClipModal').style.display = 'none';
+            currentAssignClipId = null;
+            currentAssignClipTeamId = null;
+            selectedPlayerIds = [];
+        }
+
+        async function loadClipTeamAndPlayers(clipId) {
+            try {
+                // First get the clip to find its game and team
+                const clipResponse = await authenticatedFetch(`${API_BASE}/clips/${clipId}`);
+                const clip = await clipResponse.json();
+
+                const gameResponse = await authenticatedFetch(`${API_BASE}/games/${clip.game_id}`);
+                const game = await gameResponse.json();
+
+                if (!game.team_id) {
+                    document.getElementById('playerSelectList').innerHTML =
+                        '<p style="color: #e74c3c;">This game is not associated with a team. Please associate a game with a team to assign clips.</p>';
+                    document.getElementById('assignClipButton').disabled = true;
+                    return;
+                }
+
+                currentAssignClipTeamId = game.team_id;
+
+                // Load team players
+                const playersResponse = await authenticatedFetch(`${API_BASE}/teams/${game.team_id}/players`);
+                const players = await playersResponse.json();
+
+                if (players.length === 0) {
+                    document.getElementById('playerSelectList').innerHTML =
+                        '<p style="color: var(--text-tertiary);">No players on this team yet.</p>';
+                    document.getElementById('assignClipButton').disabled = true;
+                    return;
+                }
+
+                // Render player checkboxes
+                const playerListHtml = players.map(player => `
+                    <div class="player-select-item" onclick="togglePlayerSelection('${player.id}')">
+                        <input type="checkbox" id="player-${player.id}" onchange="togglePlayerSelection('${player.id}')">
+                        <label for="player-${player.id}">
+                            ${player.jersey_number ? `<span class="player-jersey">#${player.jersey_number}</span>` : ''}
+                            <span>${player.display_name}</span>
+                            ${player.position ? `<span style="font-size: 11px; color: var(--text-tertiary);">(${player.position})</span>` : ''}
+                        </label>
+                    </div>
+                `).join('');
+
+                document.getElementById('playerSelectList').innerHTML = playerListHtml;
+                document.getElementById('assignClipButton').disabled = false;
+
+            } catch (error) {
+                console.error('Error loading team and players:', error);
+                document.getElementById('playerSelectList').innerHTML =
+                    '<p style="color: #e74c3c;">Error loading players. Please try again.</p>';
+                document.getElementById('assignClipButton').disabled = true;
+            }
+        }
+
+        function togglePlayerSelection(playerId) {
+            const checkbox = document.getElementById(`player-${playerId}`);
+            checkbox.checked = !checkbox.checked;
+
+            if (checkbox.checked) {
+                if (!selectedPlayerIds.includes(playerId)) {
+                    selectedPlayerIds.push(playerId);
+                }
+            } else {
+                selectedPlayerIds = selectedPlayerIds.filter(id => id !== playerId);
+            }
+        }
+
+        // Priority selection
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.priority-option')) {
+                const option = e.target.closest('.priority-option');
+                const priority = option.dataset.priority;
+
+                // Update selection
+                document.querySelectorAll('.priority-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.classList.add('selected');
+                selectedPriority = priority;
+            }
+        });
+
+        async function submitClipAssignment() {
+            if (selectedPlayerIds.length === 0) {
+                document.getElementById('assignClipMessage').innerHTML =
+                    '<div class="error">Please select at least one player.</div>';
+                return;
+            }
+
+            const message = document.getElementById('assignmentMessage').value.trim();
+            const button = document.getElementById('assignClipButton');
+
+            button.disabled = true;
+            button.textContent = 'Assigning...';
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/clips/${currentAssignClipId}/assign`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        player_ids: selectedPlayerIds,
+                        message: message || null,
+                        priority: selectedPriority
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to assign clip');
+                }
+
+                // Success
+                document.getElementById('assignClipMessage').innerHTML =
+                    '<div class="success">Clip assigned successfully!</div>';
+
+                // Clear form
+                selectedPlayerIds = [];
+                document.querySelectorAll('.player-select-item input').forEach(cb => cb.checked = false);
+                document.getElementById('assignmentMessage').value = '';
+
+                // Reload assignments list
+                await loadClipAssignments(currentAssignClipId);
+
+                // Refresh clips list to update badges
+                if (currentGameId) {
+                    loadGameClips(currentGameId);
+                }
+
+                setTimeout(() => {
+                    document.getElementById('assignClipMessage').innerHTML = '';
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error assigning clip:', error);
+                document.getElementById('assignClipMessage').innerHTML =
+                    `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Assign Clip';
+            }
+        }
+
+        async function loadClipAssignments(clipId) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/clips/${clipId}/assignments`);
+                const assignments = await response.json();
+
+                if (assignments.length === 0) {
+                    document.getElementById('assignmentsList').innerHTML =
+                        '<p style="text-align: center; color: var(--text-tertiary);">No assignments yet.</p>';
+                    return;
+                }
+
+                const assignmentsHtml = assignments.map(assignment => `
+                    <div class="assignment-item ${assignment.priority}">
+                        <div class="assignment-info">
+                            <div class="assignment-player-name">
+                                ${assignment.player_name}
+                                ${assignment.priority !== 'normal' ? `<span class="assignment-badge ${assignment.priority}">${assignment.priority.toUpperCase()}</span>` : ''}
+                            </div>
+                            ${assignment.message ? `<div class="assignment-message">${assignment.message}</div>` : ''}
+                            <div class="assignment-meta">
+                                Assigned ${new Date(assignment.created_at).toLocaleDateString()}
+                                ${assignment.viewed_at ? ' • Viewed' : ''}
+                            </div>
+                        </div>
+                        <button class="assignment-remove" onclick="removeAssignment('${clipId}', '${assignment.player_id}')">Remove</button>
+                    </div>
+                `).join('');
+
+                document.getElementById('assignmentsList').innerHTML = assignmentsHtml;
+
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                document.getElementById('assignmentsList').innerHTML =
+                    '<p style="color: #e74c3c;">Error loading assignments.</p>';
+            }
+        }
+
+        async function removeAssignment(clipId, playerId) {
+            if (!confirm('Remove this assignment?')) return;
+
+            try {
+                const response = await authenticatedFetch(
+                    `${API_BASE}/clips/${clipId}/assignments/${playerId}`,
+                    { method: 'DELETE' }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove assignment');
+                }
+
+                // Reload assignments
+                await loadClipAssignments(clipId);
+
+                // Refresh clips list to update badges
+                if (currentGameId) {
+                    loadGameClips(currentGameId);
+                }
+
+            } catch (error) {
+                console.error('Error removing assignment:', error);
+                alert('Error removing assignment: ' + error.message);
+            }
+        }
+
         // Auto-refresh clips every 10 seconds to update status
         setInterval(() => {
             // Only refresh if we're in game detail view
@@ -4510,6 +5251,399 @@
                 loadGameClips(currentGameId);
             }
         }, 10000);
+
+        // ============================================
+        // Invite System Functions
+        // ============================================
+
+        let currentTeamInvites = [];
+
+        function showCreateInviteModal(teamId) {
+            const modal = document.getElementById('createInviteModal');
+            const form = document.getElementById('createInviteForm');
+            const messageDiv = document.getElementById('createInviteMessage');
+            const generatedSection = document.getElementById('inviteGeneratedSection');
+
+            form.reset();
+            messageDiv.innerHTML = '';
+            generatedSection.style.display = 'none';
+            document.getElementById('inviteTeamId').value = teamId;
+            document.getElementById('invitePlayerLinkGroup').style.display = 'none';
+
+            loadTeamPlayersForInvite(teamId);
+            modal.style.display = 'block';
+        }
+
+        function closeCreateInviteModal() {
+            document.getElementById('createInviteModal').style.display = 'none';
+        }
+
+        async function loadTeamPlayersForInvite(teamId) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/teams/${teamId}/players`);
+                if (!response.ok) throw new Error('Failed to load players');
+
+                const players = await response.json();
+                const select = document.getElementById('inviteLinkedPlayer');
+                select.innerHTML = '<option value="">Select player...</option>';
+
+                players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = player.display_name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading players:', error);
+            }
+        }
+
+        function handleInviteRoleChange() {
+            const role = document.getElementById('inviteRole').value;
+            const playerLinkGroup = document.getElementById('invitePlayerLinkGroup');
+
+            if (role === 'parent') {
+                playerLinkGroup.style.display = 'block';
+            } else {
+                playerLinkGroup.style.display = 'none';
+            }
+        }
+
+        document.getElementById('createInviteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const messageDiv = document.getElementById('createInviteMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+
+                const teamId = document.getElementById('inviteTeamId').value;
+                const role = document.getElementById('inviteRole').value;
+                const targetName = document.getElementById('inviteTargetName').value.trim();
+                const linkedPlayerId = document.getElementById('inviteLinkedPlayer').value;
+                const expiresInDays = parseInt(document.getElementById('inviteExpiresIn').value);
+
+                if (role === 'parent' && !linkedPlayerId) {
+                    messageDiv.innerHTML = '<div style="padding: 10px; background: #fee; color: #c00; border-radius: 4px; margin-bottom: 15px;">Please select a player to link to this parent invite.</div>';
+                    return;
+                }
+
+                const inviteData = {
+                    team_id: teamId,
+                    target_role: role,
+                    expires_in_days: expiresInDays
+                };
+
+                if (targetName) {
+                    inviteData.target_name = targetName;
+                }
+
+                if (role === 'parent' && linkedPlayerId) {
+                    inviteData.linked_player_id = linkedPlayerId;
+                }
+
+                const response = await authenticatedFetch(`${API_BASE}/invites`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(inviteData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create invite');
+                }
+
+                const invite = await response.json();
+
+                const baseUrl = window.location.origin;
+                const inviteLink = `${baseUrl}/?invite=${invite.code}`;
+
+                document.getElementById('generatedInviteCode').value = invite.code;
+                document.getElementById('generatedInviteLink').value = inviteLink;
+                document.getElementById('inviteGeneratedSection').style.display = 'block';
+
+                messageDiv.innerHTML = '';
+
+                if (typeof loadTeamInvites === 'function') {
+                    loadTeamInvites(teamId);
+                }
+
+            } catch (error) {
+                console.error('Error creating invite:', error);
+                messageDiv.innerHTML = `<div style="padding: 10px; background: #fee; color: #c00; border-radius: 4px; margin-bottom: 15px;">${error.message}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        async function loadTeamInvites(teamId) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/invites`);
+                if (!response.ok) throw new Error('Failed to load invites');
+
+                const allInvites = await response.json();
+                currentTeamInvites = allInvites.filter(inv => inv.team_id === teamId);
+
+                renderTeamInvites(teamId);
+            } catch (error) {
+                console.error('Error loading invites:', error);
+            }
+        }
+
+        function renderTeamInvites(teamId) {
+            const container = document.getElementById('teamInvitesContainer');
+            if (!container) return;
+
+            const teamInvites = currentTeamInvites.filter(inv => inv.team_id === teamId);
+
+            if (teamInvites.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No active invites for this team.</p>';
+                return;
+            }
+
+            const now = new Date();
+            const baseUrl = window.location.origin;
+
+            container.innerHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Role</th>
+                            <th>For</th>
+                            <th>Status</th>
+                            <th>Expires</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teamInvites.map(invite => {
+                            const expiresAt = new Date(invite.expires_at);
+                            const isExpired = expiresAt < now;
+                            const isClaimed = !!invite.claimed_by;
+
+                            let status = 'Active';
+                            let statusColor = '#27ae60';
+
+                            if (isClaimed) {
+                                status = 'Claimed';
+                                statusColor = '#95a5a6';
+                            } else if (isExpired) {
+                                status = 'Expired';
+                                statusColor = '#e74c3c';
+                            }
+
+                            const inviteLink = `${baseUrl}/?invite=${invite.code}`;
+
+                            return `
+                                <tr>
+                                    <td>
+                                        <span style="font-family: monospace; font-weight: bold; font-size: 11px;">${invite.code}</span>
+                                        <button onclick="copyToClipboard('${invite.code}', 'Code copied!')"
+                                                style="margin-left: 5px; padding: 2px 8px; font-size: 11px; background: #3498db;">
+                                            Copy
+                                        </button>
+                                    </td>
+                                    <td style="text-transform: capitalize;">${invite.target_role}</td>
+                                    <td>${invite.target_name || '<em>Not specified</em>'}</td>
+                                    <td>
+                                        <span style="color: ${statusColor}; font-weight: 600;">${status}</span>
+                                    </td>
+                                    <td style="font-size: 13px; color: var(--text-secondary);">
+                                        ${expiresAt.toLocaleDateString()}
+                                    </td>
+                                    <td>
+                                        ${!isClaimed ? `
+                                            <button onclick="copyToClipboard('${inviteLink}', 'Link copied!')"
+                                                    style="padding: 5px 10px; font-size: 12px; background: #27ae60; margin-right: 5px;">
+                                                Copy Link
+                                            </button>
+                                            <button onclick="revokeInvite('${invite.id}', '${teamId}')"
+                                                    style="padding: 5px 10px; font-size: 12px; background: #e74c3c;">
+                                                Revoke
+                                            </button>
+                                        ` : ''}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function revokeInvite(inviteId, teamId) {
+            if (!confirm('Are you sure you want to revoke this invite? The code will no longer work.')) {
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/invites/${inviteId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to revoke invite');
+
+                await loadTeamInvites(teamId);
+
+            } catch (error) {
+                console.error('Error revoking invite:', error);
+                alert('Failed to revoke invite: ' + error.message);
+            }
+        }
+
+        function copyInviteCode() {
+            const code = document.getElementById('generatedInviteCode').value;
+            copyToClipboard(code, 'Invite code copied to clipboard!');
+        }
+
+        function copyInviteLink() {
+            const link = document.getElementById('generatedInviteLink').value;
+            copyToClipboard(link, 'Invite link copied to clipboard!');
+        }
+
+        async function copyToClipboard(text, successMessage) {
+            try {
+                await navigator.clipboard.writeText(text);
+
+                const tempMsg = document.createElement('div');
+                tempMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #27ae60; color: white; padding: 15px 20px; border-radius: 4px; z-index: 10000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);';
+                tempMsg.textContent = successMessage;
+                document.body.appendChild(tempMsg);
+
+                setTimeout(() => {
+                    tempMsg.remove();
+                }, 3000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy to clipboard');
+            }
+        }
+
+        async function checkForInviteCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteCode = urlParams.get('invite');
+
+            if (inviteCode) {
+                const user = auth.getCurrentUser();
+
+                if (user) {
+                    alert('You are already logged in. To accept this invite, please log out first and then use the invite link again.');
+                    return;
+                }
+
+                await showInvitePreview(inviteCode);
+            }
+        }
+
+        async function showInvitePreview(code) {
+            try {
+                const response = await fetch(`${API_BASE}/invites/${code}`);
+                if (!response.ok) {
+                    throw new Error('Invite not found or invalid');
+                }
+
+                const invite = await response.json();
+
+                document.querySelector('.app-wrapper').style.display = 'none';
+                document.querySelector('header').style.display = 'none';
+                document.querySelector('footer').style.display = 'none';
+                document.getElementById('invitePreviewSection').style.display = 'block';
+
+                const content = document.getElementById('invitePreviewContent');
+
+                if (!invite.is_valid) {
+                    content.innerHTML = `
+                        <div style="text-align: center; padding: 30px;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                            <h3 style="color: #e74c3c; margin-bottom: 15px;">This invite is no longer valid</h3>
+                            <p style="color: var(--text-secondary);">This invite has either expired or has already been used.</p>
+                            <button onclick="window.location.href='/'" style="margin-top: 20px;">Go to Home</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const expiresAt = new Date(invite.expires_at);
+                const roleText = invite.target_role.charAt(0).toUpperCase() + invite.target_role.slice(1);
+
+                content.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 64px; margin-bottom: 15px;">🏀</div>
+                        <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 10px;">
+                            You've been invited to join
+                        </p>
+                        <h2 style="color: #3498db; font-size: 28px; margin-bottom: 5px;">${invite.team_name}</h2>
+                        <p style="color: var(--text-secondary); font-size: 16px;">
+                            as a <strong>${roleText}</strong>
+                        </p>
+                        ${invite.target_name ? `
+                            <p style="margin-top: 10px; color: var(--text-secondary);">
+                                Invite for: <strong>${invite.target_name}</strong>
+                            </p>
+                        ` : ''}
+                        ${invite.linked_player_name ? `
+                            <p style="margin-top: 10px; color: var(--text-secondary);">
+                                Linked to player: <strong>${invite.linked_player_name}</strong>
+                            </p>
+                        ` : ''}
+                    </div>
+
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <div style="font-size: 24px;">📅</div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 3px;">Expires</div>
+                                <div style="font-weight: 600;">${expiresAt.toLocaleDateString()} at ${expiresAt.toLocaleTimeString()}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="font-size: 24px;">🎟️</div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 3px;">Invite Code</div>
+                                <div style="font-family: monospace; font-weight: bold; font-size: 14px;">${invite.code}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                            To accept this invite, create your account below:
+                        </p>
+                        <button onclick="redirectToRegister('${code}')" style="font-size: 16px; padding: 15px 40px;">
+                            Create Account & Join Team
+                        </button>
+                        <p style="margin-top: 15px; font-size: 13px; color: var(--text-tertiary);">
+                            Already have an account? <a href="/" style="color: #3498db;">Log in here</a>
+                        </p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading invite:', error);
+                const content = document.getElementById('invitePreviewContent');
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                        <h3 style="color: #e74c3c; margin-bottom: 15px;">Invite Not Found</h3>
+                        <p style="color: var(--text-secondary);">${error.message}</p>
+                        <button onclick="window.location.href='/'" style="margin-top: 20px;">Go to Home</button>
+                    </div>
+                `;
+            }
+        }
+
+        function redirectToRegister(inviteCode) {
+            sessionStorage.setItem('invite_code', inviteCode);
+            window.location.href = '/?register=true';
+        }
+
+        window.addEventListener('DOMContentLoaded', checkForInviteCode);
     </script>
 </body>
 </html>
