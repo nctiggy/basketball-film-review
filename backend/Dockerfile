@@ -13,7 +13,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app.py .
+COPY . .
+
+# Create migrations directory
+RUN mkdir -p /migrations
 
 # Create temp directory for video processing
 RUN mkdir -p /tmp

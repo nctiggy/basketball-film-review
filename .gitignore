@@ -81,3 +81,4 @@ scripts/create-1password-connect-server.sh
 scripts/create-cloudflare-tunnel.sh
 scripts/deploy-to-kubernetes.sh
 scripts/setup-1password-secrets.sh
+helm/values-auth.yaml

@@ -28,6 +28,30 @@ spec:
         {{- toYaml .Values.backend.gpu.tolerations | nindent 8 }}
       {{- end }}
       {{- end }}
+      # Init container to run database migrations before starting the app
+      initContainers:
+      - name: migrate
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        command: ["python", "/app/migrate.py", "--migrations-dir", "/migrations"]
+        env:
+        - name: DATABASE_URL
+          {{- if .Values.externalSecrets.enabled }}
+          valueFrom:
+            secretKeyRef:
+              name: postgres-credentials
+              key: database-url
+          {{- else }}
+          value: "postgresql://{{ .Values.secrets.postgres.username }}:{{ .Values.secrets.postgres.password }}@postgresql:5432/{{ .Values.secrets.postgres.database }}"
+          {{- end }}
+        volumeMounts:
+        - name: migrations
+          mountPath: /migrations
+          readOnly: true
+      volumes:
+      - name: migrations
+        configMap:
+          name: {{ .Release.Name }}-migrations
       containers:
       - name: backend
         image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"

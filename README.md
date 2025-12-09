@@ -1,16 +1,40 @@
 # Basketball Film Review 🏀
 
-A comprehensive web application for recording, clipping, and reviewing basketball game footage. Perfect for coaches who want to create film study sessions with their teams.
+A comprehensive web application for basketball coaches to upload game videos, create annotated clips, and share them with players and parents. The platform provides role-based access with secure, isolated dashboards for each user type.
 
 ## Features
 
-- **Game Video Upload**: Upload full game recordings
-- **Clip Extraction**: Create clips using simple timestamps (mm:ss format)
-- **Tag System**: Organize clips with custom tags (player names, play types, etc.)
-- **Search & Filter**: Find clips by game, tags, or date
-- **Background Processing**: Clips are processed asynchronously using ffmpeg
-- **Persistent Storage**: All videos and clips stored safely in MinIO
-- **Easy Deployment**: Complete Kubernetes deployment with Helm
+### For Coaches
+- **Team Management**: Create teams, manage roster, invite players and parents
+- **Game Video Upload**: Upload full game recordings with team color tracking
+- **Clip Creation**: Extract clips using simple timestamps with automated processing
+- **Rich Annotations**: Draw arrows, circles, and add text overlays on clips
+- **Voice-Over Recording**: Add personal audio coaching to any clip
+- **Player Assignments**: Assign clips to specific players with custom messages
+- **Statistics Tracking**: Enter and track detailed player game statistics
+- **Progress Monitoring**: See which players have viewed and acknowledged clips
+
+### For Players
+- **Personal Dashboard**: View only clips assigned specifically to you
+- **Annotated Video**: Watch clips with coach's drawings and voice-over feedback
+- **Statistics View**: Track your performance across games with detailed stats
+- **Progress Tracking**: Mark clips as viewed and acknowledged
+- **Mobile Responsive**: Access your content from any device
+
+### For Parents
+- **Child Monitoring**: View all content assigned to your children
+- **Same Experience**: See exactly what your child sees (clips, stats, annotations)
+- **Multiple Children**: Link to and switch between multiple children
+- **Read-Only Access**: Stay informed without modifying any content
+
+## Technical Features
+
+- **Background Processing**: Clips processed asynchronously using ffmpeg and Kubernetes operators
+- **Persistent Storage**: Videos stored safely in MinIO S3-compatible storage
+- **Role-Based Security**: Strict access control ensures players only see their content
+- **OAuth Integration**: Google OAuth for coach authentication
+- **Easy Deployment**: Complete Kubernetes deployment with Helm and Flux CD
+- **Automated CI/CD**: GitHub Actions pipeline with semantic versioning
 
 ## Architecture
 
@@ -31,6 +55,27 @@ A comprehensive web application for recording, clipping, and reviewing basketbal
 - Helm 3.x
 - kubectl configured to access your cluster
 - Persistent Volume support (for PostgreSQL and MinIO)
+
+## Documentation
+
+Comprehensive documentation is available for all users:
+
+### User Guides
+- **[User Guide Overview](docs/user-guide/README.md)** - Getting started guide for all users
+- **[Coach Guide](docs/user-guide/coach-guide.md)** - Complete guide for coaches covering team management, video upload, clip creation, annotations, assignments, and statistics
+- **[Player Guide](docs/user-guide/player-guide.md)** - Guide for players to claim invites, view assigned clips, and track statistics
+- **[Parent Guide](docs/user-guide/parent-guide.md)** - Guide for parents to link accounts and monitor their children's progress
+
+### API Documentation
+- **[API Overview](docs/api/README.md)** - API introduction, base URLs, and quick start
+- **[Authentication](docs/api/authentication.md)** - Complete authentication guide (OAuth, JWT, registration)
+- **[Endpoints Reference](docs/api/endpoints.md)** - Comprehensive reference for all API endpoints
+
+### Developer Documentation
+- **[Developer Guide](docs/developer/README.md)** - Local development setup, testing, and contributing guidelines
+
+### Operations Documentation
+- **[Operations Guide](docs/operations/README.md)** - Deployment, configuration, monitoring, and troubleshooting
 
 ## Quick Start - Local Development
 

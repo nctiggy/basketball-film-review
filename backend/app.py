@@ -16,6 +16,21 @@ from contextlib import asynccontextmanager
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
+# Import auth routes
+from backend.routes import (
+    auth_router,
+    player_router,
+    parent_router,
+    invites_router,
+    teams_router,
+    assignments_router,
+    annotations_router,
+    stats_router
+)
+from backend.auth import dependencies as auth_deps
+from backend.auth import get_current_user
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 # Configuration from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://filmreview:filmreview@postgres:5432/filmreview")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
@@ -33,6 +48,9 @@ async def lifespan(app: FastAPI):
     # Startup
     global db_pool
     db_pool = await asyncpg.create_pool(DATABASE_URL)
+
+    # Set db_pool for auth dependencies
+    auth_deps.set_db_pool(db_pool)
 
     # Initialize Kubernetes client (in-cluster config)
     try:
@@ -149,6 +167,212 @@ async def lifespan(app: FastAPI):
                 completed_at TIMESTAMP
             )
         """)
+
+        # Create auth and user management tables
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email TEXT UNIQUE,
+                username TEXT UNIQUE,
+                password_hash TEXT,
+                auth_provider TEXT DEFAULT 'local',
+                display_name TEXT NOT NULL,
+                role TEXT NOT NULL CHECK (role IN ('coach', 'player', 'parent')),
+                phone TEXT,
+                status TEXT DEFAULT 'invited',
+                created_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                last_login_at TIMESTAMP,
+                CONSTRAINT email_or_username CHECK (email IS NOT NULL OR username IS NOT NULL)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_profiles (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                jersey_number TEXT,
+                position TEXT,
+                graduation_year INTEGER
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS parent_links (
+                parent_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                verified_at TIMESTAMP,
+                PRIMARY KEY (parent_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS teams (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name TEXT NOT NULL,
+                season TEXT,
+                created_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS team_coaches (
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                role TEXT DEFAULT 'assistant',
+                added_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (team_id, coach_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS team_players (
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                added_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (team_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS invites (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                code TEXT UNIQUE NOT NULL,
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                target_role TEXT NOT NULL,
+                target_name TEXT,
+                linked_player_id UUID REFERENCES users(id),
+                expires_at TIMESTAMP NOT NULL,
+                claimed_by UUID REFERENCES users(id),
+                claimed_at TIMESTAMP,
+                created_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_assignments (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                assigned_by UUID REFERENCES users(id),
+                message TEXT,
+                priority TEXT DEFAULT 'normal',
+                viewed_at TIMESTAMP,
+                acknowledged_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(clip_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_annotations (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE,
+                created_by UUID REFERENCES users(id),
+                drawing_data JSONB,
+                audio_path TEXT,
+                version INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_game_stats (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                points INTEGER DEFAULT 0,
+                field_goals_made INTEGER DEFAULT 0,
+                field_goals_attempted INTEGER DEFAULT 0,
+                three_pointers_made INTEGER DEFAULT 0,
+                three_pointers_attempted INTEGER DEFAULT 0,
+                free_throws_made INTEGER DEFAULT 0,
+                free_throws_attempted INTEGER DEFAULT 0,
+                offensive_rebounds INTEGER DEFAULT 0,
+                defensive_rebounds INTEGER DEFAULT 0,
+                assists INTEGER DEFAULT 0,
+                steals INTEGER DEFAULT 0,
+                blocks INTEGER DEFAULT 0,
+                turnovers INTEGER DEFAULT 0,
+                fouls INTEGER DEFAULT 0,
+                minutes_played INTEGER,
+                recorded_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(game_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS notification_preferences (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                email_enabled BOOLEAN DEFAULT true,
+                sms_enabled BOOLEAN DEFAULT false,
+                notify_new_clip BOOLEAN DEFAULT true,
+                notify_new_message BOOLEAN DEFAULT true
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT,
+                data JSONB,
+                read_at TIMESTAMP,
+                sent_email_at TIMESTAMP,
+                sent_sms_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                revoked_at TIMESTAMP
+            )
+        """)
+
+        # Add team_id to games table if it doesn't exist
+        await conn.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name='games' AND column_name='team_id'
+                ) THEN
+                    ALTER TABLE games ADD COLUMN team_id UUID REFERENCES teams(id);
+                END IF;
+            END $$;
+        """)
+
+        # Create indexes for new tables
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_parent_links_parent ON parent_links(parent_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_parent_links_player ON parent_links(player_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_team_coaches_coach ON team_coaches(coach_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_team_players_player ON team_players(player_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_invites_code ON invites(code)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_invites_team ON invites(team_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_games_team ON games(team_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_clip_assignments_player ON clip_assignments(player_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_clip_assignments_clip ON clip_assignments(clip_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_clip_annotations_clip ON clip_annotations(clip_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_player_game_stats_player ON player_game_stats(player_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_player_game_stats_game ON player_game_stats(game_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash ON refresh_tokens(token_hash)")
     
     yield
     
@@ -157,7 +381,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Basketball Film Review", lifespan=lifespan)
 
-# CORS middleware
+# Security middleware
+from backend.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
+
+# CORS middleware (must be last to apply first)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -165,6 +398,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routers
+app.include_router(auth_router)
+app.include_router(player_router)
+app.include_router(parent_router)
+app.include_router(invites_router)
+app.include_router(teams_router)
+app.include_router(assignments_router)
+app.include_router(annotations_router)
+app.include_router(stats_router)
 
 # Pydantic models
 class GameCreate(BaseModel):
@@ -401,9 +644,10 @@ async def create_game(
     name: str = Form(...),
     date: str = Form(...),
     home_team_color: str = Form("white"),
-    away_team_color: str = Form("dark")
+    away_team_color: str = Form("dark"),
+    current_user: dict = Depends(get_current_user)
 ):
-    """Create a new game"""
+    """Create a new game - requires authentication"""
     # Parse date string to date object
     try:
         game_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -436,9 +680,10 @@ async def create_game(
 @app.post("/games/{game_id}/videos", response_model=Video)
 async def upload_video(
     game_id: str,
-    video: UploadFile = File(...)
+    video: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
 ):
-    """Upload a video for a game"""
+    """Upload a video for a game - requires authentication"""
     # Verify game exists
     async with db_pool.acquire() as conn:
         game = await conn.fetchrow("SELECT id FROM games WHERE id = $1", uuid.UUID(game_id))
@@ -481,8 +726,8 @@ async def upload_video(
     }
 
 @app.get("/games/{game_id}/videos", response_model=List[Video])
-async def list_game_videos(game_id: str):
-    """List all videos for a game"""
+async def list_game_videos(game_id: str, current_user: dict = Depends(get_current_user)):
+    """List all videos for a game - requires authentication"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(
             "SELECT * FROM videos WHERE game_id = $1 ORDER BY uploaded_at DESC",
@@ -501,8 +746,8 @@ async def list_game_videos(game_id: str):
     ]
 
 @app.get("/videos/{video_id}", response_model=Video)
-async def get_video(video_id: str):
-    """Get a specific video"""
+async def get_video(video_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific video - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM videos WHERE id = $1",
@@ -523,9 +768,10 @@ async def get_video(video_id: str):
 @app.put("/videos/{video_id}", response_model=Video)
 async def update_video(
     video_id: str,
-    filename: str = Form(...)
+    filename: str = Form(...),
+    current_user: dict = Depends(get_current_user)
 ):
-    """Update video metadata (filename only)"""
+    """Update video metadata (filename only) - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -549,8 +795,8 @@ async def update_video(
     }
 
 @app.delete("/videos/{video_id}")
-async def delete_video(video_id: str):
-    """Delete a video and all associated clips"""
+async def delete_video(video_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a video and all associated clips - requires authentication"""
     async with db_pool.acquire() as conn:
         # Get video path
         video = await conn.fetchrow(
@@ -590,8 +836,8 @@ async def delete_video(video_id: str):
     return {"message": "Video deleted successfully"}
 
 @app.get("/games", response_model=List[Game])
-async def list_games():
-    """List all games"""
+async def list_games(current_user: dict = Depends(get_current_user)):
+    """List all games - requires authentication"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT g.id, g.name, g.date, g.home_team_color, g.away_team_color, g.created_at, COUNT(v.id) as video_count
@@ -615,8 +861,8 @@ async def list_games():
     ]
 
 @app.get("/games/{game_id}", response_model=Game)
-async def get_game(game_id: str):
-    """Get a specific game"""
+async def get_game(game_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific game - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -648,9 +894,10 @@ async def update_game(
     name: str = Form(...),
     date: str = Form(...),
     home_team_color: str = Form("white"),
-    away_team_color: str = Form("dark")
+    away_team_color: str = Form("dark"),
+    current_user: dict = Depends(get_current_user)
 ):
-    """Update a game"""
+    """Update a game - requires authentication"""
     try:
         game_date = datetime.strptime(date, "%Y-%m-%d").date()
     except ValueError:
@@ -687,8 +934,8 @@ async def update_game(
     }
 
 @app.delete("/games/{game_id}")
-async def delete_game(game_id: str):
-    """Delete a game and all associated videos and clips"""
+async def delete_game(game_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a game and all associated videos and clips - requires authentication"""
     async with db_pool.acquire() as conn:
         # Get all video paths to delete from MinIO
         videos = await conn.fetch(
@@ -729,8 +976,8 @@ async def delete_game(game_id: str):
     return {"message": "Game deleted successfully"}
 
 @app.get("/games/{game_id}/video")
-async def stream_game_video(game_id: str):
-    """Stream the first video for a game"""
+async def stream_game_video(game_id: str, current_user: dict = Depends(get_current_user)):
+    """Stream the first video for a game - requires authentication"""
     # Get the first video for this game
     async with db_pool.acquire() as conn:
         video = await conn.fetchrow(
@@ -776,8 +1023,8 @@ async def stream_video(video_id: str, request: Request):
     return await stream_video_with_range(request, video_path, minio_client)
 
 @app.post("/clips", response_model=Clip)
-async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
-    """Create a new clip from a game video"""
+async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Create a new clip from a game video - requires authentication"""
     # Verify video exists
     async with db_pool.acquire() as conn:
         video = await conn.fetchrow(
@@ -833,8 +1080,8 @@ async def create_clip(clip: ClipCreate, background_tasks: BackgroundTasks):
     }
 
 @app.get("/clips", response_model=List[Clip])
-async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
-    """List clips with optional filters"""
+async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """List clips with optional filters - requires authentication"""
     query = "SELECT * FROM clips WHERE 1=1"
     params = []
 
@@ -869,8 +1116,8 @@ async def list_clips(game_id: Optional[str] = None, tag: Optional[str] = None):
     ]
 
 @app.get("/clips/{clip_id}", response_model=Clip)
-async def get_clip(clip_id: str):
-    """Get a specific clip"""
+async def get_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM clips WHERE id = $1",
@@ -895,8 +1142,8 @@ async def get_clip(clip_id: str):
     }
 
 @app.put("/clips/{clip_id}", response_model=Clip)
-async def update_clip(clip_id: str, clip: ClipCreate):
-    """Update clip metadata (tags, players, notes, timestamps)"""
+async def update_clip(clip_id: str, clip: ClipCreate, current_user: dict = Depends(get_current_user)):
+    """Update clip metadata (tags, players, notes, timestamps) - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -926,7 +1173,7 @@ async def update_clip(clip_id: str, clip: ClipCreate):
     }
 
 @app.get("/clips/{clip_id}/stream")
-async def stream_clip(clip_id: str, request: Request):
+async def stream_clip(clip_id: str, request: Request, current_user: Optional[dict] = Depends(auth_deps.get_current_user_optional)):
     """Stream a processed clip for viewing with range request support"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -940,13 +1187,52 @@ async def stream_clip(clip_id: str, request: Request):
     if row["status"] != "completed":
         raise HTTPException(status_code=400, detail=f"Clip is not ready. Status: {row['status']}")
 
+    # Authorization check: players can only stream clips assigned to them
+    if current_user and current_user["role"] == "player":
+        async with db_pool.acquire() as conn:
+            is_assigned = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments
+                    WHERE clip_id = $1 AND player_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not is_assigned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
+    # Parents can stream clips assigned to their children
+    if current_user and current_user["role"] == "parent":
+        async with db_pool.acquire() as conn:
+            has_access = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments ca
+                    INNER JOIN parent_links pl ON ca.player_id = pl.player_id
+                    WHERE ca.clip_id = $1 AND pl.parent_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not has_access:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
     # Stream from MinIO with range support
     minio_client = get_minio_client()
     return await stream_video_with_range(request, row["clip_path"], minio_client)
 
 @app.get("/clips/{clip_id}/download")
-async def download_clip(clip_id: str):
-    """Download a processed clip"""
+async def download_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+    """Download a processed clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT clip_path, status FROM clips WHERE id = $1",
@@ -972,8 +1258,8 @@ async def download_clip(clip_id: str):
         raise HTTPException(status_code=404, detail="Clip file not found")
 
 @app.delete("/clips/{clip_id}")
-async def delete_clip(clip_id: str):
-    """Delete a clip"""
+async def delete_clip(clip_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT clip_path FROM clips WHERE id = $1",
@@ -1000,8 +1286,8 @@ async def delete_clip(clip_id: str):
     return {"message": "Clip deleted successfully"}
 
 @app.get("/players")
-async def get_players():
-    """Get all unique players from clips"""
+async def get_players(current_user: dict = Depends(get_current_user)):
+    """Get all unique players from clips - requires authentication"""
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(
             "SELECT DISTINCT unnest(players) as player FROM clips WHERE array_length(players, 1) > 0 ORDER BY player"
@@ -1071,8 +1357,8 @@ async def create_analysisjob(clip_id: str, game_id: str, clip_path: str, home_te
 
 
 @app.post("/clips/{clip_id}/analyze", response_model=ClipAnalysis)
-async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks):
-    """Start AI analysis of a clip"""
+async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Start AI analysis of a clip - requires authentication"""
     # Verify clip exists and is completed
     async with db_pool.acquire() as conn:
         clip = await conn.fetchrow(
@@ -1160,8 +1446,8 @@ async def analyze_clip(clip_id: str, background_tasks: BackgroundTasks):
 
 
 @app.get("/clips/{clip_id}/analysis", response_model=ClipAnalysis)
-async def get_clip_analysis(clip_id: str):
-    """Get the analysis results for a clip"""
+async def get_clip_analysis(clip_id: str, current_user: dict = Depends(get_current_user)):
+    """Get the analysis results for a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM clip_analyses WHERE clip_id = $1",
@@ -1193,8 +1479,8 @@ async def get_clip_analysis(clip_id: str):
 
 
 @app.delete("/clips/{clip_id}/analysis")
-async def delete_clip_analysis(clip_id: str):
-    """Delete analysis for a clip"""
+async def delete_clip_analysis(clip_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete analysis for a clip - requires authentication"""
     async with db_pool.acquire() as conn:
         result = await conn.execute(
             "DELETE FROM clip_analyses WHERE clip_id = $1",
@@ -1205,6 +1491,170 @@ async def delete_clip_analysis(clip_id: str):
             raise HTTPException(status_code=404, detail="Analysis not found for this clip")
 
     return {"message": "Analysis deleted successfully"}
+
+
+# Annotations endpoints
+@app.get("/clips/{clip_id}/annotations")
+async def get_clip_annotations(clip_id: str, current_user: Optional[dict] = Depends(auth_deps.get_current_user_optional)):
+    """
+    Get annotations for a clip (drawings and audio overlay).
+
+    Authorization:
+    - Coaches: can view any clip
+    - Players: can only view clips assigned to them
+    - Parents: can view clips assigned to their children
+    """
+    # Verify clip exists
+    async with db_pool.acquire() as conn:
+        clip = await conn.fetchrow(
+            "SELECT id FROM clips WHERE id = $1",
+            uuid.UUID(clip_id)
+        )
+
+        if not clip:
+            raise HTTPException(status_code=404, detail="Clip not found")
+
+        # Authorization check for players
+        if current_user and current_user["role"] == "player":
+            is_assigned = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments
+                    WHERE clip_id = $1 AND player_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not is_assigned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
+        # Authorization check for parents
+        if current_user and current_user["role"] == "parent":
+            has_access = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments ca
+                    INNER JOIN parent_links pl ON ca.player_id = pl.player_id
+                    WHERE ca.clip_id = $1 AND pl.parent_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not has_access:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
+        # Get the latest annotation for this clip
+        annotation = await conn.fetchrow(
+            """
+            SELECT id, clip_id, created_by, drawing_data, audio_path, version, created_at, updated_at
+            FROM clip_annotations
+            WHERE clip_id = $1
+            ORDER BY version DESC
+            LIMIT 1
+            """,
+            uuid.UUID(clip_id)
+        )
+
+        if not annotation:
+            # Return empty annotation if none exists
+            return {
+                "clip_id": clip_id,
+                "drawing_data": None,
+                "audio_path": None,
+                "version": 0
+            }
+
+        return {
+            "id": str(annotation["id"]),
+            "clip_id": str(annotation["clip_id"]),
+            "created_by": str(annotation["created_by"]) if annotation["created_by"] else None,
+            "drawing_data": annotation["drawing_data"],
+            "audio_path": annotation["audio_path"],
+            "version": annotation["version"],
+            "created_at": annotation["created_at"],
+            "updated_at": annotation["updated_at"]
+        }
+
+
+@app.get("/clips/{clip_id}/audio")
+async def get_clip_audio(clip_id: str, current_user: Optional[dict] = Depends(auth_deps.get_current_user_optional)):
+    """
+    Get audio overlay for a clip.
+
+    Streams the audio file from MinIO with authorization checks.
+    """
+    async with db_pool.acquire() as conn:
+        # Get annotation with audio path
+        annotation = await conn.fetchrow(
+            """
+            SELECT audio_path
+            FROM clip_annotations
+            WHERE clip_id = $1 AND audio_path IS NOT NULL
+            ORDER BY version DESC
+            LIMIT 1
+            """,
+            uuid.UUID(clip_id)
+        )
+
+        if not annotation or not annotation["audio_path"]:
+            raise HTTPException(status_code=404, detail="No audio overlay found for this clip")
+
+        # Authorization check for players
+        if current_user and current_user["role"] == "player":
+            is_assigned = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments
+                    WHERE clip_id = $1 AND player_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not is_assigned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
+        # Authorization check for parents
+        if current_user and current_user["role"] == "parent":
+            has_access = await conn.fetchval(
+                """
+                SELECT EXISTS(
+                    SELECT 1 FROM clip_assignments ca
+                    INNER JOIN parent_links pl ON ca.player_id = pl.player_id
+                    WHERE ca.clip_id = $1 AND pl.parent_id = $2
+                )
+                """,
+                uuid.UUID(clip_id),
+                uuid.UUID(current_user["id"])
+            )
+            if not has_access:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this clip"
+                )
+
+        # Stream audio from MinIO
+        minio_client = get_minio_client()
+        try:
+            response = minio_client.get_object(BUCKET_NAME, annotation["audio_path"])
+            return StreamingResponse(
+                response.stream(),
+                media_type="audio/mpeg",
+                headers={"Content-Disposition": f"inline; filename=audio_{clip_id}.mp3"}
+            )
+        except S3Error as e:
+            raise HTTPException(status_code=404, detail="Audio file not found")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Basketball Film Review - Player & Parent Portal</title>
+    <style>
+        :root {
+            /* Light mode colors */
+            --bg-primary: #f5f5f5;
+            --bg-secondary: white;
+            --bg-tertiary: #fafafa;
+            --bg-hover: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-tertiary: #666;
+            --border-color: #e0e0e0;
+            --border-light: #ddd;
+            --header-bg: #2c3e50;
+            --header-text: white;
+            --accent: #3498db;
+            --accent-hover: #2980b9;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --bg-tertiary: #363636;
+                --bg-hover: #404040;
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --text-tertiary: #909090;
+                --border-color: #404040;
+                --border-light: #4a4a4a;
+                --header-bg: #1a1a1a;
+                --header-text: #e0e0e0;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-button {
+            background: none;
+            border: none;
+            color: var(--header-text);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .user-button:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 150px;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        .dropdown button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: none;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .dropdown button:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown button:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Child Selector (for parents) */
+        .child-selector {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .child-selector label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .child-selector select {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        /* Welcome Section */
+        .welcome {
+            margin-bottom: 2rem;
+        }
+
+        .welcome h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Section */
+        .section {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section h2 {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .view-all-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Clip List */
+        .clip-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .clip-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clip-card:hover {
+            background: var(--bg-hover);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .clip-card.new {
+            border-left-color: var(--success);
+        }
+
+        .clip-card.priority-high {
+            border-left-color: var(--danger);
+        }
+
+        .clip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .clip-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .new-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .clip-time {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .clip-message {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+            font-style: italic;
+        }
+
+        .clip-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-top: 0.5rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            max-width: 1000px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            padding: 0.5rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Video Player */
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .annotation-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Buttons */
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            min-height: 44px; /* Mobile friendly */
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-tertiary);
+        }
+
+        .spinner {
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Auth Pages */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-card {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-card h1 {
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+        }
+
+        .auth-card p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .error-message {
+            background: #fee;
+            color: var(--danger);
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            background: #efe;
+            color: var(--success);
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .container {
+                padding: 0.75rem;
+            }
+
+            .section {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+
+            .welcome h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Hide elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Views -->
+    <div id="loginView" class="auth-container hidden">
+        <div class="auth-card">
+            <h1>Sign In</h1>
+            <p>Welcome back to Basketball Film Review</p>
+            <div id="loginError" class="error-message hidden"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="inviteClaimView" class="auth-container hidden">
+        <div class="auth-card">
+            <h1>Join Team</h1>
+            <div id="inviteInfo" class="loading">
+                <div class="spinner"></div>
+                <p>Loading invite...</p>
+            </div>
+            <div id="inviteForm" class="hidden">
+                <p id="inviteDescription"></p>
+                <div id="inviteError" class="error-message hidden"></div>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerDisplayName">Full Name</label>
+                        <input type="text" id="registerDisplayName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" required autocomplete="new-password" minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPasswordConfirm">Confirm Password</label>
+                        <input type="password" id="registerPasswordConfirm" required autocomplete="new-password" minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPhone">Phone (optional)</label>
+                        <input type="tel" id="registerPhone" autocomplete="tel">
+                    </div>
+                    <button type="submit">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player/Parent Dashboard -->
+    <div id="dashboardView" class="hidden">
+        <header>
+            <div class="header-content">
+                <div class="logo">Basketball Film Review</div>
+                <div class="header-actions">
+                    <div class="user-menu">
+                        <button class="user-button" id="userMenuButton">
+                            <span id="userDisplayName"></span> ▼
+                        </button>
+                        <div class="dropdown" id="userDropdown">
+                            <button onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Child Selector (for parents only) -->
+            <div id="childSelector" class="child-selector hidden">
+                <label for="childSelect">Viewing clips for:</label>
+                <select id="childSelect">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+
+            <!-- Welcome Section -->
+            <div class="welcome">
+                <h1 id="welcomeMessage">Welcome!</h1>
+            </div>
+
+            <!-- New Clips Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2>New Clips (<span id="newClipsCount">0</span>)</h2>
+                    <a href="#" class="view-all-link" onclick="showAllClips(); return false;">View All</a>
+                </div>
+                <div id="newClipsList" class="clip-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading clips...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="section">
+                <h2>Season Stats</h2>
+                <div id="seasonStats" class="stats-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading stats...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clip Viewer Modal -->
+    <div id="clipViewerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="clipViewerTitle">Clip</h2>
+                <button class="modal-close" onclick="closeClipViewer()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="clipViewerLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading clip...</p>
+                </div>
+                <div id="clipViewerContent" class="hidden">
+                    <div class="video-container">
+                        <video id="clipVideo" controls preload="metadata">
+                            Your browser does not support the video tag.
+                        </video>
+                        <canvas id="annotationCanvas" class="annotation-overlay"></canvas>
+                    </div>
+                    <div id="clipCoachMessage" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-style: italic;"></div>
+                    <div id="clipInfo" style="color: var(--text-secondary); font-size: 0.9rem;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeClipViewer()">Close</button>
+                <button id="acknowledgeButton" onclick="acknowledgeClip()">Mark as Reviewed</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = null;
+        let currentClip = null;
+        let currentAnnotations = null;
+        let children = [];
+        let selectedChildId = null;
+        let videoElement = null;
+        let canvasElement = null;
+        let canvasContext = null;
+        let audioElement = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            const hash = window.location.hash;
+
+            if (hash.startsWith('#/join/')) {
+                const inviteCode = hash.substring(7);
+                await showInviteClaim(inviteCode);
+            } else {
+                await checkAuth();
+            }
+        }
+
+        // Auth Functions
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                showLogin();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    localStorage.removeItem('token');
+                    showLogin();
+                    return;
+                }
+
+                currentUser = await response.json();
+
+                if (currentUser.role === 'coach') {
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                await showDashboard();
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('inviteClaimView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        }
+
+        async function showInviteClaim(code) {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('inviteClaimView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE}/invites/${code}`);
+
+                if (!response.ok) {
+                    throw new Error('Invite not found or expired');
+                }
+
+                const invite = await response.json();
+
+                if (!invite.is_valid) {
+                    throw new Error('This invite has expired or has already been claimed');
+                }
+
+                document.getElementById('inviteInfo').classList.add('hidden');
+                document.getElementById('inviteForm').classList.remove('hidden');
+
+                const roleName = invite.target_role === 'player' ? 'Player' : 'Parent';
+                document.getElementById('inviteDescription').textContent =
+                    `You've been invited to join ${invite.team_name}${invite.team_season ? ' (' + invite.team_season + ')' : ''} as a ${roleName}.`;
+
+                if (invite.target_name) {
+                    document.getElementById('registerDisplayName').value = invite.target_name;
+                }
+
+                document.getElementById('registerForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    await handleRegister(code);
+                };
+            } catch (error) {
+                document.getElementById('inviteInfo').innerHTML = `
+                    <div class="error-message">${error.message}</div>
+                    <p><a href="/">Return to login</a></p>
+                `;
+            }
+        }
+
+        async function handleRegister(inviteCode) {
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            if (password !== passwordConfirm) {
+                showError('inviteError', 'Passwords do not match');
+                return;
+            }
+
+            const data = {
+                invite_code: inviteCode,
+                username: document.getElementById('registerUsername').value,
+                password: password,
+                display_name: document.getElementById('registerDisplayName').value,
+                phone: document.getElementById('registerPhone').value || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Registration failed');
+                }
+
+                const result = await response.json();
+                localStorage.setItem('token', result.access_token);
+                currentUser = result.user;
+
+                window.location.hash = '';
+                await showDashboard();
+            } catch (error) {
+                showError('inviteError', error.message);
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Invalid username or password');
+                }
+
+                const result = await response.json();
+                localStorage.setItem('token', result.access_token);
+                currentUser = result.user;
+
+                if (currentUser.role === 'coach') {
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                await showDashboard();
+            } catch (error) {
+                showError('loginError', error.message);
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('token');
+            currentUser = null;
+            window.location.reload();
+        }
+
+        // Dashboard Functions
+        async function showDashboard() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('inviteClaimView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+
+            document.getElementById('userDisplayName').textContent = currentUser.display_name;
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${currentUser.display_name.split(' ')[0]}!`;
+
+            // Setup user menu dropdown
+            document.getElementById('userMenuButton').addEventListener('click', () => {
+                document.getElementById('userDropdown').classList.toggle('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.user-menu')) {
+                    document.getElementById('userDropdown').classList.remove('show');
+                }
+            });
+
+            if (currentUser.role === 'parent') {
+                await loadChildren();
+            } else {
+                await loadPlayerDashboard();
+            }
+        }
+
+        async function loadChildren() {
+            try {
+                const response = await fetch(`${API_BASE}/me/children`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load children');
+
+                children = await response.json();
+
+                if (children.length === 0) {
+                    document.getElementById('newClipsList').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <p>No children linked to your account yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                document.getElementById('childSelector').classList.remove('hidden');
+                const select = document.getElementById('childSelect');
+                select.innerHTML = children.map(child =>
+                    `<option value="${child.id}">${child.display_name}</option>`
+                ).join('');
+
+                selectedChildId = children[0].id;
+                select.value = selectedChildId;
+
+                select.addEventListener('change', () => {
+                    selectedChildId = select.value;
+                    loadPlayerDashboard(selectedChildId);
+                });
+
+                await loadPlayerDashboard(selectedChildId);
+            } catch (error) {
+                console.error('Error loading children:', error);
+                showError('newClipsList', 'Failed to load children');
+            }
+        }
+
+        async function loadPlayerDashboard(playerId = null) {
+            const isParent = currentUser.role === 'parent';
+            const targetPlayerId = playerId || currentUser.id;
+
+            await Promise.all([
+                loadClips(targetPlayerId, isParent),
+                loadStats(targetPlayerId, isParent)
+            ]);
+        }
+
+        async function loadClips(playerId, isParent) {
+            try {
+                const endpoint = isParent
+                    ? `${API_BASE}/me/children/${playerId}/clips`
+                    : `${API_BASE}/me/clips`;
+
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load clips');
+
+                const clips = await response.json();
+                const newClips = clips.filter(c => !c.viewed_at);
+
+                document.getElementById('newClipsCount').textContent = newClips.length;
+
+                const container = document.getElementById('newClipsList');
+
+                if (newClips.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎬</div>
+                            <p>No new clips to review.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = newClips.slice(0, 5).map(clip => renderClipCard(clip)).join('');
+            } catch (error) {
+                console.error('Error loading clips:', error);
+                document.getElementById('newClipsList').innerHTML = `
+                    <div class="error-message">Failed to load clips</div>
+                `;
+            }
+        }
+
+        async function loadStats(playerId, isParent) {
+            try {
+                const endpoint = isParent
+                    ? `${API_BASE}/me/children/${playerId}/stats/season`
+                    : `${API_BASE}/me/stats/season`;
+
+                const response = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load stats');
+
+                const stats = await response.json();
+
+                document.getElementById('seasonStats').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.avg_points.toFixed(1)}</div>
+                        <div class="stat-label">PPG</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.avg_rebounds.toFixed(1)}</div>
+                        <div class="stat-label">RPG</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.avg_assists.toFixed(1)}</div>
+                        <div class="stat-label">APG</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.fg_percentage.toFixed(1)}%</div>
+                        <div class="stat-label">FG%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.three_pt_percentage.toFixed(1)}%</div>
+                        <div class="stat-label">3P%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.ft_percentage.toFixed(1)}%</div>
+                        <div class="stat-label">FT%</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('seasonStats').innerHTML = `
+                    <div class="empty-state">
+                        <p>No stats available yet.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderClipCard(clip) {
+            const isNew = !clip.viewed_at;
+            const priorityClass = clip.priority === 'high' ? 'priority-high' : '';
+            const assignedDate = new Date(clip.assignment_created_at);
+            const timeAgo = getTimeAgo(assignedDate);
+
+            return `
+                <div class="clip-card ${isNew ? 'new' : ''} ${priorityClass}" onclick="openClipViewer('${clip.id}')">
+                    <div class="clip-header">
+                        <div class="clip-title">
+                            <span>${clip.game_name}</span>
+                            ${isNew ? '<span class="new-badge">NEW</span>' : ''}
+                        </div>
+                        <div class="clip-time">${timeAgo}</div>
+                    </div>
+                    ${clip.message ? `<div class="clip-message">"${clip.message}"</div>` : ''}
+                    <div class="clip-meta">
+                        <span>⏱️ ${clip.start_time} - ${clip.end_time}</span>
+                        <span>👤 ${clip.assigned_by_name}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        // Clip Viewer Functions
+        async function openClipViewer(clipId) {
+            document.getElementById('clipViewerModal').classList.add('show');
+            document.getElementById('clipViewerLoading').classList.remove('hidden');
+            document.getElementById('clipViewerContent').classList.add('hidden');
+
+            const isParent = currentUser.role === 'parent';
+            const endpoint = isParent
+                ? `${API_BASE}/me/children/${selectedChildId}/clips`
+                : `${API_BASE}/me/clips`;
+
+            try {
+                // Get clip details
+                const clipsResponse = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const clips = await clipsResponse.json();
+                currentClip = clips.find(c => c.id === clipId);
+
+                if (!currentClip) throw new Error('Clip not found');
+
+                document.getElementById('clipViewerTitle').textContent = `${currentClip.game_name} - ${currentClip.start_time} to ${currentClip.end_time}`;
+
+                // Setup video
+                videoElement = document.getElementById('clipVideo');
+                canvasElement = document.getElementById('annotationCanvas');
+                canvasContext = canvasElement.getContext('2d');
+
+                videoElement.src = `${API_BASE}/clips/${clipId}/stream`;
+
+                // Load annotations
+                await loadAnnotations(clipId);
+
+                // Update UI
+                if (currentClip.message) {
+                    document.getElementById('clipCoachMessage').innerHTML = `<strong>Coach's Note:</strong> ${currentClip.message}`;
+                } else {
+                    document.getElementById('clipCoachMessage').classList.add('hidden');
+                }
+
+                document.getElementById('clipInfo').innerHTML = `
+                    <p><strong>Game:</strong> ${currentClip.game_name} (${currentClip.game_date})</p>
+                    <p><strong>Assigned by:</strong> ${currentClip.assigned_by_name}</p>
+                `;
+
+                // Setup video listeners
+                videoElement.addEventListener('loadedmetadata', () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                });
+
+                videoElement.addEventListener('timeupdate', renderAnnotations);
+                videoElement.addEventListener('play', () => {
+                    if (!isParent && !currentClip.viewed_at) {
+                        markViewed(clipId);
+                    }
+                });
+
+                // Show acknowledge button for players
+                document.getElementById('acknowledgeButton').classList.toggle('hidden', isParent || !!currentClip.acknowledged_at);
+
+                document.getElementById('clipViewerLoading').classList.add('hidden');
+                document.getElementById('clipViewerContent').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading clip:', error);
+                document.getElementById('clipViewerLoading').innerHTML = `
+                    <div class="error-message">Failed to load clip</div>
+                `;
+            }
+        }
+
+        async function loadAnnotations(clipId) {
+            try {
+                const response = await fetch(`${API_BASE}/clips/${clipId}/annotations`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (response.ok) {
+                    currentAnnotations = await response.json();
+
+                    // Load audio if exists
+                    if (currentAnnotations.audio_path) {
+                        audioElement = new Audio(`${API_BASE}/clips/${clipId}/audio`);
+                        audioElement.preload = 'auto';
+
+                        // Sync audio with video
+                        videoElement.addEventListener('play', () => audioElement.play());
+                        videoElement.addEventListener('pause', () => audioElement.pause());
+                        videoElement.addEventListener('seeked', () => {
+                            audioElement.currentTime = videoElement.currentTime;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading annotations:', error);
+            }
+        }
+
+        function renderAnnotations() {
+            if (!currentAnnotations || !currentAnnotations.drawing_data) return;
+
+            const currentTime = videoElement.currentTime;
+            canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            const annotations = currentAnnotations.drawing_data.objects || [];
+
+            for (const annotation of annotations) {
+                // Check if annotation should be visible at current time
+                if (annotation.startTime <= currentTime && currentTime <= annotation.endTime) {
+                    drawAnnotation(annotation);
+                }
+            }
+        }
+
+        function drawAnnotation(annotation) {
+            const scaleX = canvasElement.width / currentAnnotations.drawing_data.canvasWidth;
+            const scaleY = canvasElement.height / currentAnnotations.drawing_data.canvasHeight;
+
+            canvasContext.strokeStyle = annotation.stroke || '#ff0000';
+            canvasContext.fillStyle = annotation.fill || 'transparent';
+            canvasContext.lineWidth = (annotation.strokeWidth || 2) * Math.min(scaleX, scaleY);
+
+            switch (annotation.type) {
+                case 'arrow':
+                    drawArrow(
+                        annotation.x1 * scaleX,
+                        annotation.y1 * scaleY,
+                        annotation.x2 * scaleX,
+                        annotation.y2 * scaleY
+                    );
+                    break;
+
+                case 'circle':
+                    canvasContext.beginPath();
+                    canvasContext.arc(
+                        annotation.left * scaleX,
+                        annotation.top * scaleY,
+                        annotation.radius * Math.min(scaleX, scaleY),
+                        0,
+                        2 * Math.PI
+                    );
+                    canvasContext.stroke();
+                    break;
+
+                case 'textbox':
+                    canvasContext.font = `${annotation.fontSize * Math.min(scaleX, scaleY)}px sans-serif`;
+                    canvasContext.fillStyle = annotation.fill || '#ffffff';
+                    if (annotation.backgroundColor) {
+                        canvasContext.fillStyle = annotation.backgroundColor;
+                        canvasContext.fillRect(
+                            annotation.left * scaleX,
+                            annotation.top * scaleY,
+                            canvasContext.measureText(annotation.text).width + 10,
+                            annotation.fontSize * Math.min(scaleX, scaleY) + 10
+                        );
+                    }
+                    canvasContext.fillStyle = annotation.fill || '#ffffff';
+                    canvasContext.fillText(
+                        annotation.text,
+                        annotation.left * scaleX,
+                        annotation.top * scaleY
+                    );
+                    break;
+            }
+        }
+
+        function drawArrow(x1, y1, x2, y2) {
+            const headlen = 15;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+
+            canvasContext.beginPath();
+            canvasContext.moveTo(x1, y1);
+            canvasContext.lineTo(x2, y2);
+            canvasContext.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+            canvasContext.moveTo(x2, y2);
+            canvasContext.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+            canvasContext.stroke();
+        }
+
+        async function markViewed(clipId) {
+            try {
+                await fetch(`${API_BASE}/me/clips/${clipId}/viewed`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                currentClip.viewed_at = new Date().toISOString();
+            } catch (error) {
+                console.error('Error marking clip as viewed:', error);
+            }
+        }
+
+        async function acknowledgeClip() {
+            try {
+                await fetch(`${API_BASE}/me/clips/${currentClip.id}/acknowledge`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                currentClip.acknowledged_at = new Date().toISOString();
+                document.getElementById('acknowledgeButton').classList.add('hidden');
+                closeClipViewer();
+
+                // Reload dashboard
+                if (currentUser.role === 'parent') {
+                    await loadPlayerDashboard(selectedChildId);
+                } else {
+                    await loadPlayerDashboard();
+                }
+            } catch (error) {
+                console.error('Error acknowledging clip:', error);
+                alert('Failed to acknowledge clip');
+            }
+        }
+
+        function closeClipViewer() {
+            document.getElementById('clipViewerModal').classList.remove('show');
+
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.src = '';
+            }
+
+            if (audioElement) {
+                audioElement.pause();
+                audioElement = null;
+            }
+
+            currentClip = null;
+            currentAnnotations = null;
+        }
+
+        function showAllClips() {
+            alert('Full clips list view - to be implemented by Agent 2 (coach interface)');
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.remove('hidden');
+            setTimeout(() => element.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

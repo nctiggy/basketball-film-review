@@ -59,22 +59,25 @@ class ReplicateQwenProvider(AnalysisProvider):
             video_size_mb = len(video_bytes) / (1024 * 1024)
             print(f"[Replicate/Qwen2-VL] Video size: {video_size_mb:.2f} MB")
 
-            # Replicate accepts file objects directly
+            # Convert video to base64 data URI with video/mp4 MIME type
+            video_b64 = base64.b64encode(video_bytes).decode('utf-8')
+            video_data_uri = f"data:video/mp4;base64,{video_b64}"
+            print(f"[Replicate/Qwen2-VL] Created data URI ({len(video_data_uri)} chars)")
+
             print(f"[Replicate/Qwen2-VL] Sending to model...")
 
             # Build prompt
             prompt = self._build_prompt(config)
 
-            # Run prediction with file upload
-            with open(video_path, 'rb') as video_file:
-                output = replicate.run(
-                    self.model,
-                    input={
-                        "media": video_file,
-                        "prompt": prompt,
-                        "max_new_tokens": 512,  # Longer output for detailed analysis
-                    }
-                )
+            # Run prediction with data URI
+            output = replicate.run(
+                self.model,
+                input={
+                    "media": video_data_uri,
+                    "prompt": prompt,
+                    "max_new_tokens": 512,  # Longer output for detailed analysis
+                }
+            )
 
             # Output is typically a string or generator
             if hasattr(output, '__iter__') and not isinstance(output, str):
