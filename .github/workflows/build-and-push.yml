@@ -62,8 +62,10 @@ jobs:
 
       - name: Run security scan with bandit
         run: |
-          bandit -r backend/ -f json -o bandit-report.json
-          bandit -r backend/ -ll  # Only fail on high severity issues
+          # Generate report (ignore exit code)
+          bandit -r backend/ -f json -o bandit-report.json || true
+          # Fail only on high severity issues
+          bandit -r backend/ -ll
 
       - name: Upload security report
         if: always()
