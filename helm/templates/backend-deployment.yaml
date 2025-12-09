@@ -36,14 +36,7 @@ spec:
         command: ["python", "/app/migrate.py", "--migrations-dir", "/migrations"]
         env:
         - name: DATABASE_URL
-          {{- if .Values.externalSecrets.enabled }}
-          valueFrom:
-            secretKeyRef:
-              name: postgres-credentials
-              key: database-url
-          {{- else }}
           value: "postgresql://{{ .Values.secrets.postgres.username }}:{{ .Values.secrets.postgres.password }}@postgresql:5432/{{ .Values.secrets.postgres.database }}"
-          {{- end }}
         volumeMounts:
         - name: migrations
           mountPath: /migrations
