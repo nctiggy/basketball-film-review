@@ -59,12 +59,105 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .app-wrapper {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
+
+        .nav-sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            padding: 0 20px;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            background: #3498db;
+            color: white;
+            border-left: 3px solid #2980b9;
+        }
+
+        .nav-item-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .user-info {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .user-info-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .user-info-role {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: capitalize;
         }
 
         .container {
+            flex: 1;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
         }
 
         header {
@@ -958,14 +1051,37 @@
 </head>
 <body>
     <header>
-        <div class="container">
-            <h1>🏀 Basketball Film Review</h1>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="margin: 0;">🏀 Basketball Film Review</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-size: 0.8em; opacity: 0.7;">Test Role:</span>
+                <button onclick="switchRole('coach')" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; font-size: 0.85em;">Coach</button>
+                <button onclick="switchRole('player')" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; font-size: 0.85em;">Player</button>
+                <button onclick="switchRole('parent')" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; font-size: 0.85em;">Parent</button>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <!-- Games List View (Main View) -->
-        <div id="gamesListView">
+    <div class="app-wrapper">
+        <!-- Navigation Sidebar -->
+        <nav class="nav-sidebar" id="navSidebar">
+            <!-- User info will be inserted here by JavaScript -->
+            <div class="user-info">
+                <div class="user-info-name" id="userName">Guest User</div>
+                <div class="user-info-role" id="userRole">Coach</div>
+            </div>
+
+            <!-- Navigation sections will be inserted here by JavaScript -->
+            <div id="navigationContent"></div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="container">
+                <!-- COACH VIEWS -->
+                <div id="coachViews" class="role-views">
+                    <!-- Games List View (Main View) -->
+                    <div id="gamesListView" class="view-section active">
             <div class="section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">Games</h2>
@@ -977,8 +1093,8 @@
             </div>
         </div>
 
-        <!-- Game Detail View (Hidden by default) -->
-        <div id="gameDetailView" style="display: none;">
+                    <!-- Game Detail View (Hidden by default) -->
+                    <div id="gameDetailView" class="view-section">
             <!-- Navigation -->
             <div style="margin-bottom: 20px;">
                 <button onclick="showGamesListView()" class="btn-secondary">← Back to Games</button>
@@ -1037,6 +1153,108 @@
                 <div id="gameClipsContainer">
                     <div class="loading">Loading clips...</div>
                 </div>
+            </div>
+                    </div>
+
+                    <!-- Teams Management View -->
+                    <div id="coachTeamsView" class="view-section">
+                        <div class="section">
+                            <h2>Teams Management</h2>
+                            <div id="coachTeamsContainer">
+                                <p style="color: var(--text-secondary);">Create and manage your teams, add coaches and players to rosters.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Players Management View -->
+                    <div id="coachPlayersView" class="view-section">
+                        <div class="section">
+                            <h2>Players Management</h2>
+                            <div id="coachPlayersContainer">
+                                <p style="color: var(--text-secondary);">View and manage all players across your teams.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics View -->
+                    <div id="coachStatsView" class="view-section">
+                        <div class="section">
+                            <h2>Statistics</h2>
+                            <div id="coachStatsContainer">
+                                <p style="color: var(--text-secondary);">Enter and view player statistics for games and seasons.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Coach Views -->
+
+                <!-- PLAYER VIEWS -->
+                <div id="playerViews" class="role-views" style="display: none;">
+                    <!-- My Clips View -->
+                    <div id="playerClipsView" class="view-section active">
+                        <div class="section">
+                            <h2>My Assigned Clips</h2>
+                            <div id="playerClipsContainer">
+                                <p style="color: var(--text-secondary);">Your assigned clips will appear here. Coaches can assign specific clips for you to review.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- My Stats View -->
+                    <div id="playerStatsView" class="view-section">
+                        <div class="section">
+                            <h2>My Statistics</h2>
+                            <div id="playerStatsContainer">
+                                <p style="color: var(--text-secondary);">Your game statistics and performance data will appear here.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- My Team View -->
+                    <div id="playerTeamView" class="view-section">
+                        <div class="section">
+                            <h2>My Team</h2>
+                            <div id="playerTeamContainer">
+                                <p style="color: var(--text-secondary);">Your team roster and information will appear here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Player Views -->
+
+                <!-- PARENT VIEWS -->
+                <div id="parentViews" class="role-views" style="display: none;">
+                    <!-- Children View -->
+                    <div id="parentChildrenView" class="view-section active">
+                        <div class="section">
+                            <h2>My Children</h2>
+                            <div id="parentChildrenContainer">
+                                <p style="color: var(--text-secondary);">Your linked children will appear here. Select a child to view their clips and statistics.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Child Clips View -->
+                    <div id="parentChildClipsView" class="view-section">
+                        <div class="section">
+                            <h2>Child's Clips</h2>
+                            <div id="parentChildClipsContainer">
+                                <p style="color: var(--text-secondary);">Select a child from the Children view to see their assigned clips.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Child Stats View -->
+                    <div id="parentChildStatsView" class="view-section">
+                        <div class="section">
+                            <h2>Child's Statistics</h2>
+                            <div id="parentChildStatsContainer">
+                                <p style="color: var(--text-secondary);">Select a child from the Children view to see their statistics.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Parent Views -->
             </div>
         </div>
     </div>
@@ -1371,6 +1589,360 @@
         let currentClipFilter = '';
         let currentClipSort = 'newest';
 
+        // Authentication State Management
+        const auth = {
+            // Get stored tokens
+            getAccessToken: () => localStorage.getItem('access_token'),
+            getRefreshToken: () => localStorage.getItem('refresh_token'),
+
+            // Store tokens
+            setTokens: (accessToken, refreshToken) => {
+                localStorage.setItem('access_token', accessToken);
+                if (refreshToken) {
+                    localStorage.setItem('refresh_token', refreshToken);
+                }
+            },
+
+            // Clear tokens
+            clearTokens: () => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('current_user');
+            },
+
+            // Get/Set current user
+            getCurrentUser: () => {
+                const userStr = localStorage.getItem('current_user');
+                return userStr ? JSON.parse(userStr) : null;
+            },
+
+            setCurrentUser: (user) => {
+                localStorage.setItem('current_user', JSON.stringify(user));
+            },
+
+            // Check if authenticated
+            isAuthenticated: () => {
+                return !!auth.getAccessToken();
+            },
+
+            // Get user role
+            getRole: () => {
+                const user = auth.getCurrentUser();
+                return user ? user.role : null;
+            },
+
+            // Login
+            login: async (username, password) => {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Login failed');
+                }
+
+                const data = await response.json();
+                auth.setTokens(data.access_token, data.refresh_token);
+                auth.setCurrentUser(data.user);
+                auth.updateUI();
+                return data;
+            },
+
+            // Logout
+            logout: () => {
+                auth.clearTokens();
+                auth.updateUI();
+                window.location.reload();
+            },
+
+            // Refresh access token
+            refreshAccessToken: async () => {
+                const refreshToken = auth.getRefreshToken();
+                if (!refreshToken) {
+                    throw new Error('No refresh token available');
+                }
+
+                const response = await fetch(`${API_BASE}/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+
+                if (!response.ok) {
+                    auth.clearTokens();
+                    throw new Error('Token refresh failed');
+                }
+
+                const data = await response.json();
+                auth.setTokens(data.access_token, null);
+                return data.access_token;
+            },
+
+            // Update UI based on auth state
+            updateUI: () => {
+                const user = auth.getCurrentUser();
+                const userInfoEl = document.getElementById('userInfo');
+                const userNameEl = document.getElementById('userName');
+                const userRoleEl = document.getElementById('userRole');
+
+                if (!userInfoEl) return;
+
+                if (user) {
+                    userInfoEl.style.display = 'flex';
+                    userNameEl.textContent = user.display_name || user.username;
+                    userRoleEl.textContent = user.role;
+                } else {
+                    userInfoEl.style.display = 'none';
+                }
+            }
+        };
+
+        // Authenticated fetch wrapper
+        async function authenticatedFetch(url, options = {}) {
+            const accessToken = auth.getAccessToken();
+
+            if (accessToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${accessToken}`
+                };
+            }
+
+            let response = await fetch(url, options);
+
+            // If we get 401 and have a refresh token, try to refresh
+            if (response.status === 401 && auth.getRefreshToken()) {
+                try {
+                    const newAccessToken = await auth.refreshAccessToken();
+
+                    options.headers = {
+                        ...options.headers,
+                        'Authorization': `Bearer ${newAccessToken}`
+                    };
+
+                    response = await fetch(url, options);
+                } catch (error) {
+                    console.error('Token refresh failed:', error);
+                    auth.clearTokens();
+                    auth.updateUI();
+                }
+            }
+
+            return response;
+        }
+
+        // Role-based navigation state
+        let currentUserRole = 'coach'; // Default to coach (guest mode)
+        let currentUserName = 'Guest User';
+        let currentView = 'gamesListView';
+
+        // Navigation configuration for each role
+        const navigationConfig = {
+            coach: {
+                sections: [
+                    {
+                        title: 'Main',
+                        items: [
+                            { id: 'gamesListView', label: 'Games', icon: '🏀' }
+                        ]
+                    },
+                    {
+                        title: 'Management',
+                        items: [
+                            { id: 'coachTeamsView', label: 'Teams', icon: '👥' },
+                            { id: 'coachPlayersView', label: 'Players', icon: '👤' },
+                            { id: 'coachStatsView', label: 'Statistics', icon: '📊' }
+                        ]
+                    }
+                ]
+            },
+            player: {
+                sections: [
+                    {
+                        title: 'My Content',
+                        items: [
+                            { id: 'playerClipsView', label: 'My Clips', icon: '🎬' },
+                            { id: 'playerStatsView', label: 'My Stats', icon: '📊' },
+                            { id: 'playerTeamView', label: 'My Team', icon: '👥' }
+                        ]
+                    }
+                ]
+            },
+            parent: {
+                sections: [
+                    {
+                        title: 'Family',
+                        items: [
+                            { id: 'parentChildrenView', label: 'Children', icon: '👨‍👩‍👧‍👦' },
+                            { id: 'parentChildClipsView', label: 'Child Clips', icon: '🎬' },
+                            { id: 'parentChildStatsView', label: 'Child Stats', icon: '📊' }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Initialize navigation based on user role
+        function initializeNavigation() {
+            const navContent = document.getElementById('navigationContent');
+            const config = navigationConfig[currentUserRole];
+
+            if (!config) {
+                console.error('Invalid role:', currentUserRole);
+                return;
+            }
+
+            let html = '';
+            config.sections.forEach(section => {
+                html += `<div class="nav-section">`;
+                html += `<div class="nav-section-title">${section.title}</div>`;
+                section.items.forEach(item => {
+                    const isActive = item.id === currentView ? 'active' : '';
+                    html += `
+                        <div class="nav-item ${isActive}" onclick="switchView('${item.id}')">
+                            <span class="nav-item-icon">${item.icon}</span>
+                            <span>${item.label}</span>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            navContent.innerHTML = html;
+
+            // Update user info display
+            document.getElementById('userName').textContent = currentUserName;
+            document.getElementById('userRole').textContent = currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1);
+        }
+
+        // Switch between different views
+        function switchView(viewId) {
+            // Hide all view sections
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show the selected view
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.add('active');
+                currentView = viewId;
+
+                // Update navigation active state
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const activeNavItem = Array.from(document.querySelectorAll('.nav-item')).find(
+                    item => item.getAttribute('onclick')?.includes(viewId)
+                );
+                if (activeNavItem) {
+                    activeNavItem.classList.add('active');
+                }
+
+                // Load content for the view if needed
+                loadViewContent(viewId);
+            }
+        }
+
+        // Load content for a specific view
+        function loadViewContent(viewId) {
+            // Load data based on the view
+            switch(viewId) {
+                case 'gamesListView':
+                    loadGamesTable();
+                    break;
+                case 'playerClipsView':
+                    // TODO: Load player's assigned clips
+                    console.log('Loading player clips...');
+                    break;
+                case 'playerStatsView':
+                    // TODO: Load player stats
+                    console.log('Loading player stats...');
+                    break;
+                case 'playerTeamView':
+                    // TODO: Load player's team info
+                    console.log('Loading player team...');
+                    break;
+                case 'parentChildrenView':
+                    // TODO: Load parent's children
+                    console.log('Loading children...');
+                    break;
+                case 'parentChildClipsView':
+                    // TODO: Load child's clips
+                    console.log('Loading child clips...');
+                    break;
+                case 'parentChildStatsView':
+                    // TODO: Load child's stats
+                    console.log('Loading child stats...');
+                    break;
+                case 'coachTeamsView':
+                    // TODO: Load coach teams
+                    console.log('Loading coach teams...');
+                    break;
+                case 'coachPlayersView':
+                    // TODO: Load coach players
+                    console.log('Loading coach players...');
+                    break;
+                case 'coachStatsView':
+                    // TODO: Load coach stats view
+                    console.log('Loading coach stats...');
+                    break;
+            }
+        }
+
+        // Switch user role (for testing and future authentication)
+        function switchRole(newRole) {
+            if (!navigationConfig[newRole]) {
+                console.error('Invalid role:', newRole);
+                return;
+            }
+
+            currentUserRole = newRole;
+
+            // Hide all role views
+            document.getElementById('coachViews').style.display = 'none';
+            document.getElementById('playerViews').style.display = 'none';
+            document.getElementById('parentViews').style.display = 'none';
+
+            // Show the appropriate role view
+            const roleViewMap = {
+                coach: 'coachViews',
+                player: 'playerViews',
+                parent: 'parentViews'
+            };
+            document.getElementById(roleViewMap[newRole]).style.display = 'block';
+
+            // Set the default view for the role
+            const defaultViews = {
+                coach: 'gamesListView',
+                player: 'playerClipsView',
+                parent: 'parentChildrenView'
+            };
+
+            // Initialize navigation for new role
+            currentView = defaultViews[newRole];
+            initializeNavigation();
+            switchView(currentView);
+        }
+
+        // Update user information (to be called after authentication)
+        function updateUserInfo(userName, userRole) {
+            currentUserName = userName;
+            currentUserRole = userRole;
+            switchRole(userRole);
+        }
+
         // Detect if we're on local network and can access backend directly
         async function detectLocalNetwork() {
             // Skip local network detection if page loaded over HTTPS
@@ -1417,6 +1989,7 @@
         // Load games on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await detectLocalNetwork();
+            initializeNavigation(); // Initialize role-based navigation
             loadGamesTable();
             setupEventListeners();
         });
@@ -1957,17 +2530,20 @@
 
         // ===== VIEW MANAGEMENT =====
         function showGamesListView() {
-            document.getElementById('gamesListView').style.display = 'block';
-            document.getElementById('gameDetailView').style.display = 'none';
+            // Use the switchView function to properly handle view switching
             currentGameId = null;
             currentGameData = null;
-            loadGamesTable();
+            switchView('gamesListView');
         }
 
         function showGameDetailView(gameId) {
             currentGameId = gameId;
-            document.getElementById('gamesListView').style.display = 'none';
-            document.getElementById('gameDetailView').style.display = 'block';
+            // Use switchView but also load the game detail
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById('gameDetailView').classList.add('active');
+            currentView = 'gameDetailView';
             loadGameDetail(gameId);
         }
 
