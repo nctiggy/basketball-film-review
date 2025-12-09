@@ -12,8 +12,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy application code into backend/ to match import structure
+COPY . ./backend/
+# Copy app.py to root as well for the uvicorn entry point
+COPY app.py .
 
 # Create migrations directory
 RUN mkdir -p /migrations
