@@ -25,7 +25,7 @@ os.environ["MINIO_SECRET_KEY"] = "minioadmin"
 
 from backend.app import app
 from backend.auth import create_access_token, hash_password
-from backend.auth.dependencies import db_pool as app_db_pool
+from backend.auth.dependencies import db_pool as app_db_pool, set_db_pool
 
 
 @pytest.fixture(scope="session")
@@ -36,12 +36,284 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
-async def db_pool():
-    """Create a database connection pool for testing."""
+@pytest.fixture(scope="session")
+async def initialize_database():
+    """Initialize the test database schema once per session."""
     pool = await asyncpg.create_pool(os.environ["DATABASE_URL"])
+
+    # Set the db_pool for auth dependencies
+    set_db_pool(pool)
+
+    async with pool.acquire() as conn:
+        # Create base tables (from app.py lifespan)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS games (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name VARCHAR(255) NOT NULL,
+                date DATE NOT NULL,
+                home_team_color VARCHAR(50) DEFAULT 'white',
+                away_team_color VARCHAR(50) DEFAULT 'dark',
+                team_id UUID,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS videos (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                filename VARCHAR(255) NOT NULL,
+                video_path VARCHAR(500),
+                uploaded_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clips (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                video_id UUID REFERENCES videos(id) ON DELETE CASCADE,
+                start_time VARCHAR(20) NOT NULL,
+                end_time VARCHAR(20) NOT NULL,
+                tags TEXT[] DEFAULT '{}',
+                players TEXT[] DEFAULT '{}',
+                notes TEXT,
+                clip_path VARCHAR(500),
+                status VARCHAR(50) DEFAULT 'pending',
+                error_message TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_analyses (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE UNIQUE,
+                status VARCHAR(50) DEFAULT 'pending',
+                shot_attempts INTEGER DEFAULT 0,
+                shot_makes INTEGER DEFAULT 0,
+                analysis_details JSONB,
+                created_at TIMESTAMP DEFAULT NOW(),
+                completed_at TIMESTAMP
+            )
+        """)
+
+        # Create auth/team tables (from migration)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email TEXT UNIQUE,
+                username TEXT UNIQUE,
+                password_hash TEXT,
+                auth_provider TEXT DEFAULT 'local',
+                display_name TEXT NOT NULL,
+                role TEXT NOT NULL CHECK (role IN ('coach', 'player', 'parent')),
+                phone TEXT,
+                status TEXT DEFAULT 'invited',
+                created_by UUID,
+                created_at TIMESTAMP DEFAULT NOW(),
+                last_login_at TIMESTAMP,
+                CONSTRAINT email_or_username CHECK (email IS NOT NULL OR username IS NOT NULL)
+            )
+        """)
+
+        # Add foreign key for games.team_id after teams table exists
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS teams (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name TEXT NOT NULL,
+                season TEXT,
+                created_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS team_coaches (
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                coach_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                role TEXT DEFAULT 'assistant',
+                added_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (team_id, coach_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS team_players (
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                added_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (team_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_profiles (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                jersey_number TEXT,
+                position TEXT,
+                graduation_year INTEGER
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS parent_links (
+                parent_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                verified_at TIMESTAMP,
+                PRIMARY KEY (parent_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS invites (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                code TEXT UNIQUE NOT NULL,
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                target_role TEXT NOT NULL,
+                target_name TEXT,
+                linked_player_id UUID REFERENCES users(id),
+                expires_at TIMESTAMP NOT NULL,
+                claimed_by UUID REFERENCES users(id),
+                claimed_at TIMESTAMP,
+                created_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_assignments (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                assigned_by UUID REFERENCES users(id),
+                message TEXT,
+                priority TEXT DEFAULT 'normal',
+                viewed_at TIMESTAMP,
+                acknowledged_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(clip_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS clip_annotations (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clip_id UUID REFERENCES clips(id) ON DELETE CASCADE,
+                created_by UUID REFERENCES users(id),
+                drawing_data JSONB,
+                audio_path TEXT,
+                version INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS player_game_stats (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+                player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                points INTEGER DEFAULT 0,
+                field_goals_made INTEGER DEFAULT 0,
+                field_goals_attempted INTEGER DEFAULT 0,
+                three_pointers_made INTEGER DEFAULT 0,
+                three_pointers_attempted INTEGER DEFAULT 0,
+                free_throws_made INTEGER DEFAULT 0,
+                free_throws_attempted INTEGER DEFAULT 0,
+                offensive_rebounds INTEGER DEFAULT 0,
+                defensive_rebounds INTEGER DEFAULT 0,
+                assists INTEGER DEFAULT 0,
+                steals INTEGER DEFAULT 0,
+                blocks INTEGER DEFAULT 0,
+                turnovers INTEGER DEFAULT 0,
+                fouls INTEGER DEFAULT 0,
+                minutes_played INTEGER,
+                recorded_by UUID REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(game_id, player_id)
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS notification_preferences (
+                user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                email_enabled BOOLEAN DEFAULT true,
+                sms_enabled BOOLEAN DEFAULT false,
+                notify_new_clip BOOLEAN DEFAULT true,
+                notify_new_message BOOLEAN DEFAULT true
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                body TEXT,
+                data JSONB,
+                read_at TIMESTAMP,
+                sent_email_at TIMESTAMP,
+                sent_sms_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                revoked_at TIMESTAMP
+            )
+        """)
+
     yield pool
     await pool.close()
+
+
+@pytest.fixture(scope="function")
+async def db_pool(initialize_database):
+    """Create a database connection pool for testing."""
+    # Reuse the session-scoped pool
+    yield initialize_database
+
+
+async def safe_delete(conn, table_name: str):
+    """Delete from table if it exists, ignore if not."""
+    try:
+        await conn.execute(f"DELETE FROM {table_name}")
+    except asyncpg.exceptions.UndefinedTableError:
+        pass  # Table doesn't exist yet, that's fine
+
+
+async def cleanup_tables(conn):
+    """Clean up all tables in correct order for foreign keys."""
+    tables = [
+        "notifications",
+        "notification_preferences",
+        "player_game_stats",
+        "clip_analyses",
+        "clip_annotations",
+        "clip_assignments",
+        "clips",
+        "videos",
+        "games",
+        "invites",
+        "parent_links",
+        "player_profiles",
+        "team_players",
+        "team_coaches",
+        "teams",
+        "refresh_tokens",
+        "users",
+    ]
+    for table in tables:
+        await safe_delete(conn, table)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -49,46 +321,13 @@ async def setup_database(db_pool):
     """Setup and teardown test database before/after each test."""
     # Clean up all tables before each test
     async with db_pool.acquire() as conn:
-        # Delete in correct order to respect foreign keys
-        await conn.execute("DELETE FROM notifications")
-        await conn.execute("DELETE FROM notification_preferences")
-        await conn.execute("DELETE FROM player_game_stats")
-        await conn.execute("DELETE FROM clip_analyses")
-        await conn.execute("DELETE FROM clip_annotations")
-        await conn.execute("DELETE FROM clip_assignments")
-        await conn.execute("DELETE FROM clips")
-        await conn.execute("DELETE FROM videos")
-        await conn.execute("DELETE FROM games")
-        await conn.execute("DELETE FROM invites")
-        await conn.execute("DELETE FROM parent_links")
-        await conn.execute("DELETE FROM player_profiles")
-        await conn.execute("DELETE FROM team_players")
-        await conn.execute("DELETE FROM team_coaches")
-        await conn.execute("DELETE FROM teams")
-        await conn.execute("DELETE FROM refresh_tokens")
-        await conn.execute("DELETE FROM users")
+        await cleanup_tables(conn)
 
     yield
 
     # Clean up after test
     async with db_pool.acquire() as conn:
-        await conn.execute("DELETE FROM notifications")
-        await conn.execute("DELETE FROM notification_preferences")
-        await conn.execute("DELETE FROM player_game_stats")
-        await conn.execute("DELETE FROM clip_analyses")
-        await conn.execute("DELETE FROM clip_annotations")
-        await conn.execute("DELETE FROM clip_assignments")
-        await conn.execute("DELETE FROM clips")
-        await conn.execute("DELETE FROM videos")
-        await conn.execute("DELETE FROM games")
-        await conn.execute("DELETE FROM invites")
-        await conn.execute("DELETE FROM parent_links")
-        await conn.execute("DELETE FROM player_profiles")
-        await conn.execute("DELETE FROM team_players")
-        await conn.execute("DELETE FROM team_coaches")
-        await conn.execute("DELETE FROM teams")
-        await conn.execute("DELETE FROM refresh_tokens")
-        await conn.execute("DELETE FROM users")
+        await cleanup_tables(conn)
 
 
 @pytest.fixture
