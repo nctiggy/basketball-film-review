@@ -4474,6 +4474,14 @@
         // Load games on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await detectLocalNetwork();
+
+            // Update currentUserRole from auth state before initializing navigation
+            const user = auth.getCurrentUser();
+            if (user && user.role) {
+                currentUserRole = user.role;
+                currentUserName = user.display_name || user.username || 'User';
+            }
+
             auth.updateUI(); // Initialize auth UI based on stored tokens
             initializeNavigation(); // Initialize role-based navigation
             loadGamesTable();
