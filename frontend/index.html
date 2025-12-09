@@ -1217,6 +1217,573 @@
             padding: 8px 16px;
             font-size: 13px;
         }
+
+        /* Player Portal Styles */
+        .player-clips-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .player-clip-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            transition: all 0.2s;
+        }
+
+        .player-clip-card.priority-high {
+            border-left-color: #e74c3c;
+        }
+
+        .player-clip-card.priority-low {
+            border-left-color: #95a5a6;
+        }
+
+        .player-clip-card:hover {
+            box-shadow: 0 4px 8px var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .player-clip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .player-clip-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .player-clip-game {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .player-clip-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .player-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .player-badge.priority-high {
+            background: #fee;
+            color: #e74c3c;
+        }
+
+        .player-badge.priority-normal {
+            background: #e3f2fd;
+            color: #3498db;
+        }
+
+        .player-badge.priority-low {
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+        .player-badge.viewed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .player-badge.unviewed {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .player-clip-message {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 4px;
+            margin: 12px 0;
+            border-left: 3px solid #3498db;
+        }
+
+        .player-clip-message-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .player-clip-message-text {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .player-clip-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .player-clip-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .player-clip-actions button {
+            padding: 10px 18px;
+            font-size: 14px;
+        }
+
+        .player-clip-actions .btn-success {
+            background: #27ae60;
+        }
+
+        .player-clip-actions .btn-success:hover {
+            background: #229954;
+        }
+
+        .player-clip-actions .btn-viewed {
+            background: #95a5a6;
+        }
+
+        .player-clip-actions .btn-viewed:hover {
+            background: #7f8c8d;
+        }
+
+        .clips-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .filter-btn.active {
+            border-color: #3498db;
+            background: #3498db;
+            color: white;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-top: 4px solid #3498db;
+        }
+
+        .stat-card-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-card-unit {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+        }
+
+        .stats-table thead {
+            background: var(--bg-tertiary);
+            border-bottom: 2px solid #3498db;
+        }
+
+        .stats-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .stats-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .stats-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .team-roster {
+            display: grid;
+            gap: 15px;
+        }
+
+        .team-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .team-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .team-card-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .team-card-season {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .team-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 15px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .player-list, .coach-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .player-list-item, .coach-list-item {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-list-name, .coach-list-name {
+            font-weight: 500;
+        }
+
+        .player-list-jersey {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 8px;
+        }
+
+        .coach-list-role {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: capitalize;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .player-clip-header {
+                flex-direction: column;
+            }
+
+            .player-clip-badges {
+                margin-top: 10px;
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .clips-filter {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                width: 100%;
+            }
+        }
+
+        /* Parent Portal Styles */
+        .child-card {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .child-card:hover {
+            border-color: #3498db;
+            background: var(--bg-hover);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .child-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .child-info {
+            flex: 1;
+        }
+
+        .child-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .child-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .child-badge {
+            background: #3498db;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .child-badge.unviewed {
+            background: #e74c3c;
+        }
+
+        .clip-card {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+            border-left: 4px solid #3498db;
+        }
+
+        .clip-card:hover {
+            background: var(--bg-hover);
+            box-shadow: 0 2px 4px var(--shadow);
+        }
+
+        .clip-card.unviewed {
+            border-left-color: #27ae60;
+            background: #f0fdf4;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .clip-card.unviewed {
+                background: #1a3a2a;
+            }
+        }
+
+        .clip-card.priority-high {
+            border-left-color: #e74c3c;
+        }
+
+        .clip-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .clip-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .new-badge {
+            background: #27ae60;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .clip-time {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .clip-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin: 8px 0;
+            font-style: italic;
+            padding: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .clip-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value-large {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .game-stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .game-stats-table thead {
+            background: var(--bg-tertiary);
+        }
+
+        .game-stats-table th {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .game-stats-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .game-stats-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .back-button:hover {
+            background: var(--bg-hover);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
     </style>
     <script src="teams-management.js"></script>
 </head>
@@ -2669,6 +3236,10 @@
         let currentUserName = 'Guest User';
         let currentView = 'gamesListView';
 
+        // Parent portal state
+        let selectedChild = null;
+        let childrenList = [];
+
         // Navigation configuration for each role
         const navigationConfig = {
             coach: {
@@ -2785,28 +3356,30 @@
                     loadGamesTable();
                     break;
                 case 'playerClipsView':
-                    // TODO: Load player's assigned clips
-                    console.log('Loading player clips...');
+                    loadPlayerClips();
                     break;
                 case 'playerStatsView':
-                    // TODO: Load player stats
-                    console.log('Loading player stats...');
+                    loadPlayerStats();
                     break;
                 case 'playerTeamView':
-                    // TODO: Load player's team info
-                    console.log('Loading player team...');
+                    loadPlayerTeam();
                     break;
                 case 'parentChildrenView':
-                    // TODO: Load parent's children
-                    console.log('Loading children...');
+                    loadParentChildren();
                     break;
                 case 'parentChildClipsView':
-                    // TODO: Load child's clips
-                    console.log('Loading child clips...');
+                    if (selectedChild) {
+                        loadChildClips(selectedChild.id);
+                    } else {
+                        showView('parentChildrenView');
+                    }
                     break;
                 case 'parentChildStatsView':
-                    // TODO: Load child's stats
-                    console.log('Loading child stats...');
+                    if (selectedChild) {
+                        loadChildStats(selectedChild.id);
+                    } else {
+                        showView('parentChildrenView');
+                    }
                     break;
                 case 'coachTeamsView':
                     loadCoachTeams();
@@ -3530,6 +4103,381 @@
                 console.error('Error loading games:', error);
                 document.getElementById('gamesTableContainer').innerHTML =
                     '<div class="error">Failed to load games</div>';
+            }
+        }
+
+        // ===== PLAYER PORTAL FUNCTIONS =====
+
+        // Track current filter for player clips
+        let currentClipFilter = 'all';
+
+        // Load player's assigned clips
+        async function loadPlayerClips() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/me/clips`);
+                const clips = await response.json();
+
+                const container = document.getElementById('playerClipsContainer');
+
+                if (clips.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎬</div>
+                            <div class="empty-state-text">No clips assigned yet. Your coach will assign clips for you to review.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Store clips for filtering
+                window.playerClips = clips;
+
+                // Render filter controls and clips
+                renderPlayerClipsWithFilter(clips);
+
+            } catch (error) {
+                console.error('Error loading player clips:', error);
+                document.getElementById('playerClipsContainer').innerHTML = `
+                    <div class="error">Failed to load assigned clips. Please try again later.</div>
+                `;
+            }
+        }
+
+        // Render clips with filter controls
+        function renderPlayerClipsWithFilter(allClips) {
+            const container = document.getElementById('playerClipsContainer');
+
+            // Apply current filter
+            let filteredClips = allClips;
+            if (currentClipFilter === 'unviewed') {
+                filteredClips = allClips.filter(clip => !clip.viewed_at);
+            } else if (currentClipFilter === 'high-priority') {
+                filteredClips = allClips.filter(clip => clip.priority === 'high');
+            }
+
+            const unviewedCount = allClips.filter(c => !c.viewed_at).length;
+            const highPriorityCount = allClips.filter(c => c.priority === 'high').length;
+
+            container.innerHTML = `
+                <div class="clips-filter">
+                    <button class="filter-btn ${currentClipFilter === 'all' ? 'active' : ''}" onclick="filterPlayerClips('all')">
+                        All Clips (${allClips.length})
+                    </button>
+                    <button class="filter-btn ${currentClipFilter === 'unviewed' ? 'active' : ''}" onclick="filterPlayerClips('unviewed')">
+                        Unviewed (${unviewedCount})
+                    </button>
+                    <button class="filter-btn ${currentClipFilter === 'high-priority' ? 'active' : ''}" onclick="filterPlayerClips('high-priority')">
+                        High Priority (${highPriorityCount})
+                    </button>
+                </div>
+                <div class="player-clips-grid">
+                    ${filteredClips.length === 0 ?
+                        '<div class="empty-state"><div class="empty-state-text">No clips match this filter.</div></div>' :
+                        filteredClips.map(clip => renderPlayerClipCard(clip)).join('')
+                    }
+                </div>
+            `;
+        }
+
+        // Filter player clips
+        function filterPlayerClips(filter) {
+            currentClipFilter = filter;
+            if (window.playerClips) {
+                renderPlayerClipsWithFilter(window.playerClips);
+            }
+        }
+
+        // Render individual clip card
+        function renderPlayerClipCard(clip) {
+            const isViewed = !!clip.viewed_at;
+            const isAcknowledged = !!clip.acknowledged_at;
+            const priorityClass = `priority-${clip.priority}`;
+            const canPlay = clip.status === 'completed';
+
+            return `
+                <div class="player-clip-card ${priorityClass}">
+                    <div class="player-clip-header">
+                        <div>
+                            <div class="player-clip-title">${clip.game_name}</div>
+                            <div class="player-clip-game">${new Date(clip.game_date).toLocaleDateString()}</div>
+                        </div>
+                        <div class="player-clip-badges">
+                            <span class="player-badge ${priorityClass}">${clip.priority}</span>
+                            <span class="player-badge ${isViewed ? 'viewed' : 'unviewed'}">
+                                ${isViewed ? 'Viewed' : 'New'}
+                            </span>
+                        </div>
+                    </div>
+
+                    ${clip.message ? `
+                        <div class="player-clip-message">
+                            <div class="player-clip-message-label">Coach's Message</div>
+                            <div class="player-clip-message-text">${clip.message}</div>
+                        </div>
+                    ` : ''}
+
+                    <div class="player-clip-meta">
+                        <span>⏱️ ${clip.start_time} - ${clip.end_time}</span>
+                        <span>👤 ${clip.assigned_by_name}</span>
+                        <span>📅 ${new Date(clip.assignment_created_at).toLocaleDateString()}</span>
+                    </div>
+
+                    ${clip.tags && clip.tags.length > 0 ? `
+                        <div class="player-clip-meta">
+                            <span>🏷️ ${clip.tags.join(', ')}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="player-clip-actions">
+                        ${canPlay ? `
+                            <button onclick="playPlayerClip('${clip.id}')" class="btn-primary">
+                                ${isViewed ? 'Replay' : 'Watch Clip'}
+                            </button>
+                        ` : `
+                            <button disabled>Processing...</button>
+                        `}
+                        ${!isViewed && canPlay ? `
+                            <button onclick="markClipViewed('${clip.id}')" class="btn-viewed">
+                                Mark as Viewed
+                            </button>
+                        ` : ''}
+                        ${isViewed && !isAcknowledged ? `
+                            <button onclick="acknowledgeClip('${clip.id}')" class="btn-success">
+                                Acknowledge
+                            </button>
+                        ` : ''}
+                        ${isAcknowledged ? `
+                            <span style="color: #27ae60; font-size: 14px; font-weight: 600;">✓ Acknowledged</span>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Play a clip in video modal
+        async function playPlayerClip(clipId) {
+            try {
+                // Mark as viewed automatically when playing
+                await markClipViewed(clipId);
+
+                // Open video player in new tab
+                const streamUrl = `${API_BASE}/clips/${clipId}/stream`;
+                window.open(streamUrl, '_blank');
+            } catch (error) {
+                console.error('Error playing clip:', error);
+                alert('Failed to play clip');
+            }
+        }
+
+        // Mark clip as viewed
+        async function markClipViewed(clipId) {
+            try {
+                await authenticatedFetch(`${API_BASE}/me/clips/${clipId}/viewed`, {
+                    method: 'POST'
+                });
+
+                // Reload clips to update UI
+                await loadPlayerClips();
+
+            } catch (error) {
+                console.error('Error marking clip as viewed:', error);
+                alert('Failed to mark clip as viewed');
+            }
+        }
+
+        // Acknowledge clip
+        async function acknowledgeClip(clipId) {
+            try {
+                await authenticatedFetch(`${API_BASE}/me/clips/${clipId}/acknowledge`, {
+                    method: 'POST'
+                });
+
+                // Reload clips to update UI
+                await loadPlayerClips();
+
+            } catch (error) {
+                console.error('Error acknowledging clip:', error);
+                alert('Failed to acknowledge clip');
+            }
+        }
+
+        // Load player statistics
+        async function loadPlayerStats() {
+            try {
+                // Load both game stats and season stats
+                const [gameStatsResponse, seasonStatsResponse] = await Promise.all([
+                    authenticatedFetch(`${API_BASE}/me/stats`),
+                    authenticatedFetch(`${API_BASE}/me/stats/season`)
+                ]);
+
+                const gameStats = await gameStatsResponse.json();
+                const seasonStats = await seasonStatsResponse.json();
+
+                const container = document.getElementById('playerStatsContainer');
+
+                if (gameStats.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-text">No statistics recorded yet. Your coach will add your game stats.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <h3 style="margin-bottom: 20px;">Season Averages</h3>
+                    <div class="stats-overview">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Games Played</div>
+                            <div class="stat-card-value">${seasonStats.games_played}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Points Per Game</div>
+                            <div class="stat-card-value">${seasonStats.avg_points.toFixed(1)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Rebounds Per Game</div>
+                            <div class="stat-card-value">${seasonStats.avg_rebounds.toFixed(1)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Assists Per Game</div>
+                            <div class="stat-card-value">${seasonStats.avg_assists.toFixed(1)}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">FG%</div>
+                            <div class="stat-card-value">${seasonStats.fg_percentage.toFixed(1)}<span class="stat-card-unit">%</span></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">3PT%</div>
+                            <div class="stat-card-value">${seasonStats.three_pt_percentage.toFixed(1)}<span class="stat-card-unit">%</span></div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px; margin-bottom: 20px;">Game by Game</h3>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Game</th>
+                                <th>Date</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>FG</th>
+                                <th>3PT</th>
+                                <th>FT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${gameStats.map(stat => `
+                                <tr>
+                                    <td><strong>${stat.game_name}</strong></td>
+                                    <td>${new Date(stat.game_date).toLocaleDateString()}</td>
+                                    <td>${stat.points}</td>
+                                    <td>${stat.offensive_rebounds + stat.defensive_rebounds}</td>
+                                    <td>${stat.assists}</td>
+                                    <td>${stat.field_goals_made}/${stat.field_goals_attempted}</td>
+                                    <td>${stat.three_pointers_made}/${stat.three_pointers_attempted}</td>
+                                    <td>${stat.free_throws_made}/${stat.free_throws_attempted}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+
+            } catch (error) {
+                console.error('Error loading player stats:', error);
+                document.getElementById('playerStatsContainer').innerHTML = `
+                    <div class="error">Failed to load statistics. Please try again later.</div>
+                `;
+            }
+        }
+
+        // Load player's teams
+        async function loadPlayerTeam() {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/me/teams`);
+                const teams = await response.json();
+
+                const container = document.getElementById('playerTeamContainer');
+
+                if (teams.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <div class="empty-state-text">You haven't been added to any teams yet. Contact your coach.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // For each team, load roster and coaches
+                const teamDetailsPromises = teams.map(async team => {
+                    try {
+                        const [rosterResponse, coachesResponse] = await Promise.all([
+                            authenticatedFetch(`${API_BASE}/teams/${team.id}/players`),
+                            authenticatedFetch(`${API_BASE}/teams/${team.id}/coaches`)
+                        ]);
+
+                        const roster = await rosterResponse.json();
+                        const coaches = await coachesResponse.json();
+
+                        return { ...team, roster, coaches };
+                    } catch (error) {
+                        console.error(`Error loading team ${team.id} details:`, error);
+                        return { ...team, roster: [], coaches: [] };
+                    }
+                });
+
+                const teamDetails = await Promise.all(teamDetailsPromises);
+
+                container.innerHTML = `
+                    <div class="team-roster">
+                        ${teamDetails.map(team => `
+                            <div class="team-card">
+                                <div class="team-card-header">
+                                    <div>
+                                        <div class="team-card-name">${team.name}</div>
+                                        ${team.season ? `<div class="team-card-season">${team.season}</div>` : ''}
+                                    </div>
+                                </div>
+
+                                ${team.coaches && team.coaches.length > 0 ? `
+                                    <div class="team-section-title">Coaching Staff</div>
+                                    <div class="coach-list">
+                                        ${team.coaches.map(coach => `
+                                            <div class="coach-list-item">
+                                                <span class="coach-list-name">${coach.display_name}</span>
+                                                <span class="coach-list-role">${coach.role || 'Coach'}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+
+                                ${team.roster && team.roster.length > 0 ? `
+                                    <div class="team-section-title">Team Roster</div>
+                                    <div class="player-list">
+                                        ${team.roster.map(player => `
+                                            <div class="player-list-item">
+                                                <span class="player-list-name">
+                                                    ${player.display_name}
+                                                    ${player.jersey_number ? `<span class="player-list-jersey">#${player.jersey_number}</span>` : ''}
+                                                </span>
+                                                ${player.position ? `<span style="font-size: 12px; color: var(--text-tertiary);">${player.position}</span>` : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading player teams:', error);
+                document.getElementById('playerTeamContainer').innerHTML = `
+                    <div class="error">Failed to load team information. Please try again later.</div>
+                `;
             }
         }
 
@@ -5641,6 +6589,390 @@
         function redirectToRegister(inviteCode) {
             sessionStorage.setItem('invite_code', inviteCode);
             window.location.href = '/?register=true';
+        }
+
+        // ===== Parent Portal Functions =====
+
+        async function loadParentChildren() {
+            const container = document.getElementById('parentChildrenContainer');
+
+            try {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-tertiary);"><div style="font-size: 32px; margin-bottom: 10px;">⏳</div><p>Loading children...</p></div>';
+
+                const response = await authenticatedFetch('/api/me/children');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load children');
+                }
+
+                childrenList = await response.json();
+
+                if (childrenList.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👨‍👩‍👧‍👦</div>
+                            <div class="empty-state-text">
+                                <p>No children linked to your account yet.</p>
+                                <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">
+                                    Ask your coach to send you a parent invite link.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Fetch unviewed clip counts for each child
+                const childrenWithCounts = await Promise.all(childrenList.map(async (child) => {
+                    try {
+                        const clipsResponse = await authenticatedFetch(`/api/me/children/${child.id}/clips`);
+                        const clips = await clipsResponse.json();
+                        const unviewedCount = clips.filter(c => !c.viewed_at).length;
+                        return { ...child, unviewedCount };
+                    } catch (error) {
+                        console.error(`Error loading clips for child ${child.id}:`, error);
+                        return { ...child, unviewedCount: 0 };
+                    }
+                }));
+
+                container.innerHTML = childrenWithCounts.map(child => `
+                    <div class="child-card" onclick="selectChild('${child.id}')">
+                        <div class="child-card-header">
+                            <div class="child-info">
+                                <div class="child-name">${child.display_name}</div>
+                                <div class="child-details">
+                                    ${child.jersey_number ? `<span>#${child.jersey_number}</span>` : ''}
+                                    ${child.position ? `<span>${child.position}</span>` : ''}
+                                    ${child.graduation_year ? `<span>Class of ${child.graduation_year}</span>` : ''}
+                                </div>
+                            </div>
+                            ${child.unviewedCount > 0 ? `<div class="child-badge unviewed">${child.unviewedCount} New</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading children:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="color: #e74c3c;">Failed to load children</p>
+                        <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">${error.message}</p>
+                        <button onclick="loadParentChildren()" style="margin-top: 20px;">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        function selectChild(childId) {
+            selectedChild = childrenList.find(c => c.id === childId);
+            if (selectedChild) {
+                showView('parentChildClipsView');
+            }
+        }
+
+        async function loadChildClips(childId) {
+            const container = document.getElementById('parentChildClipsContainer');
+
+            if (!selectedChild) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-text">
+                            <p>No child selected</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <h3 style="margin-bottom: 20px;">Clips for ${selectedChild.display_name}</h3>
+                    <div style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+                        <p>Loading clips...</p>
+                    </div>
+                `;
+
+                const response = await authenticatedFetch(`/api/me/children/${childId}/clips`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load clips');
+                }
+
+                const clips = await response.json();
+
+                if (clips.length === 0) {
+                    container.innerHTML = `
+                        <button class="back-button" onclick="showView('parentChildrenView')">
+                            ← Back to Children
+                        </button>
+                        <h3 style="margin-bottom: 20px;">Clips for ${selectedChild.display_name}</h3>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎬</div>
+                            <div class="empty-state-text">
+                                <p>No clips assigned yet.</p>
+                                <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">
+                                    Your coach will assign clips for review.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const clipsHtml = clips.map(clip => {
+                    const isUnviewed = !clip.viewed_at;
+                    const priorityClass = clip.priority === 'high' ? 'priority-high' : '';
+                    const unviewedClass = isUnviewed ? 'unviewed' : '';
+                    const assignedDate = new Date(clip.assignment_created_at);
+                    const timeAgo = getTimeAgo(assignedDate);
+
+                    return `
+                        <div class="clip-card ${unviewedClass} ${priorityClass}" onclick="viewParentClip('${clip.id}')">
+                            <div class="clip-card-header">
+                                <div class="clip-title">
+                                    <span>${clip.game_name}</span>
+                                    ${isUnviewed ? '<span class="new-badge">NEW</span>' : ''}
+                                </div>
+                                <div class="clip-time">${timeAgo}</div>
+                            </div>
+                            ${clip.message ? `<div class="clip-message">"${clip.message}"</div>` : ''}
+                            <div class="clip-meta">
+                                <span>⏱️ ${clip.start_time} - ${clip.end_time}</span>
+                                <span>👤 ${clip.assigned_by_name}</span>
+                                ${clip.priority === 'high' ? '<span style="color: #e74c3c;">⚡ High Priority</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <h3 style="margin-bottom: 20px;">Clips for ${selectedChild.display_name}</h3>
+                    <div style="margin-bottom: 15px;">
+                        <button onclick="loadChildStats('${childId}')" style="background: #9b59b6;">
+                            📊 View Stats
+                        </button>
+                    </div>
+                    ${clipsHtml}
+                `;
+
+            } catch (error) {
+                console.error('Error loading child clips:', error);
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="color: #e74c3c;">Failed to load clips</p>
+                        <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">${error.message}</p>
+                        <button onclick="loadChildClips('${childId}')" style="margin-top: 20px;">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        async function viewParentClip(clipId) {
+            // Parents can view clips in read-only mode
+            try {
+                const response = await authenticatedFetch(`/api/clips/${clipId}`);
+                if (!response.ok) throw new Error('Failed to load clip');
+
+                const clip = await response.json();
+
+                // Show clip using existing viewer
+                await viewClip(clipId, clip.start_time, clip.end_time, clip.tags, clip.players, clip.notes);
+
+            } catch (error) {
+                console.error('Error viewing clip:', error);
+                alert('Failed to load clip: ' + error.message);
+            }
+        }
+
+        async function loadChildStats(childId) {
+            const container = document.getElementById('parentChildStatsContainer');
+
+            if (!selectedChild) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-text">
+                            <p>No child selected</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Switch to stats view
+            showView('parentChildStatsView');
+
+            try {
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <h3 style="margin-bottom: 20px;">Statistics for ${selectedChild.display_name}</h3>
+                    <div style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+                        <p>Loading statistics...</p>
+                    </div>
+                `;
+
+                // Fetch season stats
+                const seasonResponse = await authenticatedFetch(`/api/me/children/${childId}/stats/season`);
+                if (!seasonResponse.ok) throw new Error('Failed to load season stats');
+                const seasonStats = await seasonResponse.json();
+
+                // Fetch game-by-game stats
+                const gamesResponse = await authenticatedFetch(`/api/me/children/${childId}/stats`);
+                if (!gamesResponse.ok) throw new Error('Failed to load game stats');
+                const gameStats = await gamesResponse.json();
+
+                if (seasonStats.games_played === 0) {
+                    container.innerHTML = `
+                        <button class="back-button" onclick="showView('parentChildrenView')">
+                            ← Back to Children
+                        </button>
+                        <h3 style="margin-bottom: 20px;">Statistics for ${selectedChild.display_name}</h3>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-text">
+                                <p>No statistics available yet.</p>
+                                <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">
+                                    Stats will appear here once games are recorded.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Build season stats grid
+                const seasonStatsHtml = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.games_played}</div>
+                            <div class="stat-label">Games</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.avg_points.toFixed(1)}</div>
+                            <div class="stat-label">PPG</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.avg_rebounds.toFixed(1)}</div>
+                            <div class="stat-label">RPG</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.avg_assists.toFixed(1)}</div>
+                            <div class="stat-label">APG</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.fg_percentage.toFixed(1)}%</div>
+                            <div class="stat-label">FG%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.three_pt_percentage.toFixed(1)}%</div>
+                            <div class="stat-label">3P%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value-large">${seasonStats.ft_percentage.toFixed(1)}%</div>
+                            <div class="stat-label">FT%</div>
+                        </div>
+                    </div>
+                `;
+
+                // Build game-by-game table
+                const gameStatsTableHtml = gameStats.length > 0 ? `
+                    <h3 style="margin-top: 30px; margin-bottom: 15px;">Game-by-Game Stats</h3>
+                    <table class="game-stats-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Game</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>FG</th>
+                                <th>3P</th>
+                                <th>FT</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>TO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${gameStats.map(game => {
+                                const gameDate = new Date(game.game_date);
+                                const totalReb = game.offensive_rebounds + game.defensive_rebounds;
+                                return `
+                                    <tr>
+                                        <td>${gameDate.toLocaleDateString()}</td>
+                                        <td>${game.game_name}</td>
+                                        <td><strong>${game.points}</strong></td>
+                                        <td>${totalReb}</td>
+                                        <td>${game.assists}</td>
+                                        <td>${game.field_goals_made}/${game.field_goals_attempted}</td>
+                                        <td>${game.three_pointers_made}/${game.three_pointers_attempted}</td>
+                                        <td>${game.free_throws_made}/${game.free_throws_attempted}</td>
+                                        <td>${game.steals}</td>
+                                        <td>${game.blocks}</td>
+                                        <td>${game.turnovers}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                ` : '';
+
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <h3 style="margin-bottom: 20px;">Statistics for ${selectedChild.display_name}</h3>
+                    <div style="margin-bottom: 20px;">
+                        <button onclick="loadChildClips('${childId}')">
+                            🎬 View Clips
+                        </button>
+                    </div>
+                    <h3 style="margin-bottom: 15px;">Season Averages</h3>
+                    ${seasonStatsHtml}
+                    ${gameStatsTableHtml}
+                `;
+
+            } catch (error) {
+                console.error('Error loading child stats:', error);
+                container.innerHTML = `
+                    <button class="back-button" onclick="showView('parentChildrenView')">
+                        ← Back to Children
+                    </button>
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="color: #e74c3c;">Failed to load statistics</p>
+                        <p style="font-size: 14px; color: var(--text-tertiary); margin-top: 10px;">${error.message}</p>
+                        <button onclick="loadChildStats('${childId}')" style="margin-top: 20px;">Try Again</button>
+                    </div>
+                `;
+            }
         }
 
         window.addEventListener('DOMContentLoaded', checkForInviteCode);
