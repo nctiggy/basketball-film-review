@@ -4059,9 +4059,21 @@
 
         // Handle Google login
         async function handleGoogleLogin() {
-            showAuthError('Google OAuth integration is not yet configured. Please use email/password login.', 'error');
-            // TODO: Implement Google OAuth flow
-            // This would involve redirecting to Google's OAuth endpoint and handling the callback
+            try {
+                // Get the Google OAuth authorization URL from the backend
+                const response = await fetch(`${API_BASE}/auth/google/url`);
+                if (!response.ok) {
+                    throw new Error('Failed to get Google authorization URL');
+                }
+
+                const data = await response.json();
+
+                // Redirect user to Google's OAuth consent screen
+                window.location.href = data.url;
+            } catch (error) {
+                console.error('Google login error:', error);
+                showAuthError('Failed to initiate Google login. Please try again.', 'error');
+            }
         }
 
         // Handle logout
@@ -4730,6 +4742,55 @@
         // Load games on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await detectLocalNetwork();
+
+            // Check for OAuth callback (Google login redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+
+            if (code && state) {
+                // Handle Google OAuth callback
+                try {
+                    console.log('Processing Google OAuth callback...');
+
+                    // Exchange authorization code for tokens
+                    const response = await fetch(`${API_BASE}/auth/google`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ code, state })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ detail: 'Authentication failed' }));
+                        throw new Error(errorData.detail || 'Failed to authenticate with Google');
+                    }
+
+                    const data = await response.json();
+
+                    // Store tokens and user info
+                    auth.setTokens(data.access_token, data.refresh_token);
+                    if (data.user) {
+                        auth.setCurrentUser(data.user);
+                    }
+
+                    // Clean up URL and reload
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.location.reload();
+                    return; // Stop further initialization
+                } catch (error) {
+                    console.error('OAuth callback error:', error);
+
+                    // Clean up URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // Show error to user
+                    setTimeout(() => {
+                        showAuthError(error.message || 'Failed to complete Google login. Please try again.', 'error');
+                    }, 100);
+                }
+            }
 
             // Update currentUserRole from auth state before initializing navigation
             const user = auth.getCurrentUser();

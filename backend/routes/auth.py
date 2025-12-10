@@ -33,10 +33,29 @@ from backend.auth import (
     exchange_code_for_token,
     get_current_user
 )
+from backend.auth.oauth import get_google_auth_url
 from backend.auth.dependencies import db_pool
 from backend.utils.audit_log import log_auth_event, log_sensitive_operation
+import secrets
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.get("/google/url")
+async def get_google_oauth_url():
+    """
+    Get the Google OAuth authorization URL.
+
+    Returns a URL that the frontend can redirect to for Google OAuth flow.
+    Includes a random state parameter for CSRF protection.
+    """
+    # Generate random state for CSRF protection
+    state = secrets.token_urlsafe(32)
+
+    # Get the Google OAuth URL with state parameter
+    auth_url = get_google_auth_url(state=state)
+
+    return {"url": auth_url}
 
 
 @router.post("/google", response_model=TokenResponse)

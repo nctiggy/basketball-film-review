@@ -21,10 +21,15 @@ auth:
   #
   # 1. Create OAuth 2.0 Client ID
   # 2. Add authorized redirect URIs:
-  #    - https://your-domain.com/api/auth/google/callback
-  #    - http://localhost:8000/auth/google/callback (for local dev)
+  #    - https://your-domain.com/auth/callback (frontend callback)
+  #    - http://localhost:8080/auth/callback (for local dev)
   googleClientId: "YOUR-GOOGLE-CLIENT-ID.apps.googleusercontent.com"
   googleClientSecret: "YOUR-GOOGLE-CLIENT-SECRET"
+  # The redirect URI should point to your frontend's OAuth callback page
+  # Examples:
+  #   Production: https://bball-review.craigcloud.io/auth/callback
+  #   Local dev: http://localhost:8080/auth/callback
+  googleRedirectUri: "https://your-domain.com/auth/callback"
 
 # Example full deployment command:
 # helm upgrade --install basketball-film-review ./helm \

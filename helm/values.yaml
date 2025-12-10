@@ -58,6 +58,12 @@ backend:
           name: basketball-film-review-auth
           key: google-client-secret
           optional: true
+    - name: GOOGLE_REDIRECT_URI
+      valueFrom:
+        secretKeyRef:
+          name: basketball-film-review-auth
+          key: google-redirect-uri
+          optional: true
 
 # Frontend configuration
 frontend:
