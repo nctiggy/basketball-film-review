@@ -5,6 +5,9 @@ metadata:
   namespace: film-review
 spec:
   interval: 5m
+  dependsOn:
+    - name: onepassword-connect
+      namespace: film-review
   chart:
     spec:
       chart: ./helm
