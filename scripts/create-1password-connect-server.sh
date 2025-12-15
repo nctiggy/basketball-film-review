@@ -73,7 +73,7 @@ else
     echo "Fetching existing 1Password Connect credentials..."
 
     TEMP_CREDS=$(mktemp)
-    op document get "homeops Credentials File" --vault Personal --out-file "${TEMP_CREDS}"
+    op document get "homeops Credentials File" --vault Personal --out-file "${TEMP_CREDS}" --force
 
     # Base64 encode the credentials (required by 1Password Connect)
     CREDS_BASE64=$(cat "${TEMP_CREDS}" | base64)
