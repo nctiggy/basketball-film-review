@@ -8,6 +8,10 @@ spec:
   dependsOn:
     - name: onepassword-connect
       namespace: film-review
+    - name: postgresql
+      namespace: film-review
+    - name: minio
+      namespace: film-review
   chart:
     spec:
       chart: ./helm

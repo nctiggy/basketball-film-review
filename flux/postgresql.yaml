@@ -1,0 +1,60 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.bitnami.com/bitnami
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgresql
+  namespace: film-review
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: postgresql
+      version: ">=16.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    auth:
+      username: filmreview
+      database: filmreview
+      existingSecret: basketball-film-review-postgres-credentials
+      secretKeys:
+        adminPasswordKey: password
+        userPasswordKey: password
+    image:
+      registry: docker.io
+      repository: bitnami/postgresql
+      tag: "16.6.0-debian-12-r6"
+    primary:
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: "px-csi-db"
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+    service:
+      type: ClusterIP
+      ports:
+        postgresql: 5432

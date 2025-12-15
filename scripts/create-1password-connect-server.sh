@@ -80,7 +80,7 @@ else
     rm -f "${TEMP_CREDS}"
 
     echo "Fetching 1Password Connect token..."
-    CONNECT_TOKEN=$(op item get "homeops Access Token: k8s operator" --vault Personal --fields credential)
+    CONNECT_TOKEN=$(op item get "homeops Access Token: k8s operator" --vault Personal --fields credential --reveal)
 fi
 
 # Create the op-credentials secret
