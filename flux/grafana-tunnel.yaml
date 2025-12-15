@@ -1,0 +1,136 @@
+---
+# SecretStore for monitoring namespace
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: monitoring-onepassword
+  namespace: monitoring
+spec:
+  provider:
+    onepassword:
+      connectHost: http://onepassword-connect.film-review.svc.cluster.local:8080
+      vaults:
+        k8s: 1
+      auth:
+        secretRef:
+          connectTokenSecretRef:
+            name: onepassword-connect-token
+            key: token
+---
+# ExternalSecret for Grafana tunnel credentials
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: grafana-cloudflare-tunnel
+  namespace: monitoring
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: monitoring-onepassword
+    kind: SecretStore
+  target:
+    name: grafana-cloudflared-credentials
+    creationPolicy: Owner
+    template:
+      data:
+        credentials.json: |
+          {
+            "AccountTag": "{{ .accountId }}",
+            "TunnelSecret": "{{ .tunnelSecret }}",
+            "TunnelID": "{{ .tunnelId }}"
+          }
+  data:
+    - secretKey: accountId
+      remoteRef:
+        key: cloudflare-tunnel
+        property: account-id
+    - secretKey: tunnelId
+      remoteRef:
+        key: cloudflare-tunnel
+        property: tunnel-id
+    - secretKey: tunnelSecret
+      remoteRef:
+        key: cloudflare-tunnel
+        property: tunnel-secret
+---
+# ConfigMap for cloudflared config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-cloudflared-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    tunnel: 92ade8d6-597d-4d18-bc26-ccb9579033f5
+    credentials-file: /etc/cloudflared/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+      - hostname: grafana.craigcloud.io
+        service: http://prometheus-operator-kube-prometheus-stack-grafana:80
+      - service: http_status:404
+---
+# Cloudflared Deployment for Grafana
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-cloudflared
+  namespace: monitoring
+  labels:
+    app: grafana-cloudflared
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: grafana-cloudflared
+  template:
+    metadata:
+      labels:
+        app: grafana-cloudflared
+    spec:
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2024.12.2
+          args:
+            - tunnel
+            - --config
+            - /etc/cloudflared/config.yaml
+            - run
+          ports:
+            - containerPort: 2000
+              name: metrics
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudflared/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: credentials
+              mountPath: /etc/cloudflared/credentials.json
+              subPath: credentials.json
+              readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: grafana-cloudflared-config
+        - name: credentials
+          secret:
+            secretName: grafana-cloudflared-credentials
