@@ -61,7 +61,7 @@ metadata:
   namespace: monitoring
 data:
   config.yaml: |
-    tunnel: 92ade8d6-597d-4d18-bc26-ccb9579033f5
+    tunnel: 2f367ffe-fb6e-450c-9d3f-122cb4567cbf
     credentials-file: /etc/cloudflared/credentials.json
     metrics: 0.0.0.0:2000
     no-autoupdate: true
