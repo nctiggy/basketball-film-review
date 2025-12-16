@@ -6,7 +6,7 @@ backend:
 
   image:
     repository: nctiggy/basketball-film-review-backend
-    tag: 1.21.0 # {"$imagepolicy": "flux-system:backend"}
+    tag: 1.21.1 # {"$imagepolicy": "flux-system:backend"}
     pullPolicy: IfNotPresent
 
   service:
@@ -71,7 +71,7 @@ frontend:
 
   image:
     repository: nctiggy/basketball-film-review-frontend
-    tag: 1.21.0 # {"$imagepolicy": "flux-system:frontend"}
+    tag: 1.21.1 # {"$imagepolicy": "flux-system:frontend"}
     pullPolicy: IfNotPresent
   
   service:
